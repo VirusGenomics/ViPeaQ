@@ -31,7 +31,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/VirusGenomics/ViPeaQ">
-    <img src="images/ViPeaQ_flowchart.png" alt="Logo" width="80" height="80">
+    <img src="images/ViPeaQ_flowchart.png">
   </a>
 
 <h3 align="center">ViPeaQ</h3>
