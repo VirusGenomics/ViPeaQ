@@ -12,6 +12,8 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 # echo an error message before exiting
 #~ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
+x=10  # Set the percentile value here
+
 ##########################
 ##	Tools and versions	##
 ##########################
@@ -695,8 +697,6 @@ median_fpk_host_input_no_zero=$(awk -F'\t' '$9 != 0 {print $9}' ${outdir}/genome
 
 echo "Median input FPK value of all genome bins: ${median_fpk_host_input}"
 echo "Median input FPK value of all genome bins with a FPK value different from 0: ${median_fpk_host_input_no_zero}"
-
-x=10  # Set the percentile value here
 
 # Filter non-zero values, sort them numerically
 values=$(awk -F'\t' '$9 != 0 {print $9}' ${outdir}/genome_win_count.tsv | sort -n)

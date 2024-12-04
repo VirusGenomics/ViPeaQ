@@ -147,11 +147,30 @@ This is an example of how to list things you need to use the software and how to
 
 <!-- USAGE EXAMPLES -->
 ## Usage
+```
+ViPeaQ.sh -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2]
+Alpha version 1.0
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+Mandatory:
+	-hi	Host input bam (without duplicate removal)
+	-hc	Host ChiP bam (without duplicate removal)
+	-vi	Virus input bam aligned against a single viral fasta genome (without duplicate removal)
+	-vc	Virus Chip bam aligned against a single viral fasta genome (without duplicate removal)
+	-p	Host peaks .txt (epic2) or .narrowPeaks (macs2)
+	-g	host genome name (eg. mm9, mm10, hg38, hg19)
+	-o	output directory
+	
+Optional:
+	-v	Value for positive peak selection (eg. score, pvalue, FDR, log2FoldChange) - default: score
+	-n	Number of selected positive sites - default: 200
+	-w	shifting window size of ratio (ChiP/input) calculation - default: 1000
+	-ws	Shifting size - fraction of window size (w option) - float up to 1 is allowed - default: 0.5
+	-e	exclusion region file bed format (chr	start	end) - Not Implemented
+	-t	threads number - default: 2 
+	-c	Expected FPK thershold to apply local lambda correction - default: 10
 
-_For more examples, please refer to the [Documentation](https://example.com)_
-
+	-h  show this help text
+```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
