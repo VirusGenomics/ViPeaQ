@@ -523,8 +523,8 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 
 else
 
-	awk '$9 < 10' genome_win_count.tsv > filtered_genome_win_count.tsv
-	awk '$9 < 10' ${genome_name}_win_count.tsv > filtered_${genome_name}_win_count.tsv
+	awk '$9 < 10' ${outdir}/genome_win_count.tsv > ${outdir}/filtered_genome_win_count.tsv
+	awk '$9 < 10' ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
 	
 	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count.tsv 0 ${outdir} genome_FPK.pdf
 	
@@ -534,7 +534,7 @@ else
 	## First column are entry in A and last column are overlapping entry in B
 	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_peaks.bed
 
-	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > positives_win_count.tsv
+	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > ${outdir}/positives_win_count.tsv
 
 	bedtools intersect -v -a ${outdir}/filtered_genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
 
@@ -908,7 +908,10 @@ fi
 # ${outdir}/top_negatives_peaks.tsv
 ## Viral
 # ${genome_name}_win_count_lambda_corrected.tsv
+
+echo "~~~~~~~~~~~~~~~~~~~~";
 echo "Output writing";
+echo "~~~~~~~~~~~~~~~~~~~~";
 
 if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	## Here the 3 distribution to give to R are:
