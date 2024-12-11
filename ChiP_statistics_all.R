@@ -295,15 +295,14 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
   return(plot_peaks)
 }
 
-
 # plot
 out_peaks <- paste(outdir,"outfile_peaks.pdf",sep="/")
-g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks), nrow=1, ncol=1)
+g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, "ChiP Signal Distribution Across Genome Peaks", "Genome Regions"), nrow=1, ncol=1)
 ggsave(out_peaks, g_peaks, width = 35, height = 20, units = "cm")
 dev.off()
 
 out_win <- paste(outdir,"outfile_win.pdf",sep="/")
-g_win <- grid.arrange(create_chip_signal_plot(plot.data_win), nrow=1, ncol=1)
+g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, "ChiP Signal Distribution Across Genome Bins", "Genome Bins"), nrow=1, ncol=1)
 ggsave(out_win, g_win, width = 35, height = 20, units = "cm")
 dev.off()
 

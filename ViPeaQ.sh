@@ -542,7 +542,6 @@ else
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
 	## 3) filtered_${genome_name}_win_count.tsv
-
 fi
 
 ################################################################
