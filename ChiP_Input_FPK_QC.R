@@ -18,8 +18,8 @@ if (length(args)<4) {
   stop("At least four arguments must be supplied", call.=FALSE)
 }
 
-# data <- read.table("/mnt/R7525/robitaillea/test/out/genome_win_count_lambda_corrected.tsv", header=T, sep="\t", quote="\"")
-# lambda <- 1
+# data <- read.table("/home/robitaillea/test2/out/genome_win_count.tsv", header=T, sep="\t", quote="\"")
+# lambda <- 0
 # outdir <- "/mnt/R7525/robitaillea/test/out"
 # outfile <- "genome_FPK.pdf"
 

@@ -522,11 +522,15 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	## 3) ${genome_name}_win_count_lambda_corrected.tsv
 
 else
+	## Need to add header to genome_win_count.tsv
+	# SAF	Chromosome	Start	End	Strand	Length	CovInput	CovChiP	FPKInput	FPKChiP
 
-	awk '$9 < 10' ${outdir}/genome_win_count.tsv > ${outdir}/filtered_genome_win_count.tsv
-	awk '$9 < 10' ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
+	sed $'1i SAF\tChromosome\tStart\tEnd\tStrand\tLength\tCovInput\tCovChiP\tFPKInput\tFPKChiP' ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count_header.tsv
+
+	# awk '$9 < 10' ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
+	cat ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
 	
-	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count.tsv 0 ${outdir} genome_FPK.pdf
+	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} genome_FPK.pdf
 	
 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
 	cut -f 2- ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count.bed
@@ -536,7 +540,7 @@ else
 
 	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > ${outdir}/positives_win_count.tsv
 
-	bedtools intersect -v -a ${outdir}/filtered_genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
+	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
 
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
@@ -942,7 +946,7 @@ else
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
-	## 3) filtered_${genome_name}_win_count.tsv
+	## 3) filtered_${genome_name}_win_count.tsv --> for now it is unfiltered on FPK value input
 
 	Rscript ${BASEDIR}/ChiP_statistics_all.R \
 	${outdir}/top_positives_peaks.tsv \

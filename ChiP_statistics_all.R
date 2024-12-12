@@ -14,13 +14,13 @@ if (length(args)<7) {
   stop("At least 6 arguments must be supplied", call.=FALSE)
 }
 
-args[1] <- "/home/robitaillea/test/out/top_positives_peaks.tsv"
-args[2] <- "/home/robitaillea/test/out/top_negatives_peaks.tsv"
-args[3] <- "/home/robitaillea/test/out/HQ404500_win_count_lambda_corrected.tsv"
-args[4] <- "/home/robitaillea/test/out/positives_win_count_lambda_corrected_filtered.tsv"
-args[5] <- "/home/robitaillea/test/out/negatives_win_count_lambda_corrected_filtered.tsv"
-args[6] <- "/home/robitaillea/test/out/"
-args[7] <- 1
+# args[1] <- "/home/robitaillea/test/out/top_positives_peaks.tsv"
+# args[2] <- "/home/robitaillea/test/out/top_negatives_peaks.tsv"
+# args[3] <- "/home/robitaillea/test/out/HQ404500_win_count_lambda_corrected.tsv"
+# args[4] <- "/home/robitaillea/test/out/positives_win_count_lambda_corrected_filtered.tsv"
+# args[5] <- "/home/robitaillea/test/out/negatives_win_count_lambda_corrected_filtered.tsv"
+# args[6] <- "/home/robitaillea/test/out/"
+# args[7] <- 1
 
 pos_peaks <- read.table(args[1], header=F, sep="\t", quote="\"")
 
@@ -276,8 +276,8 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     ) +
     
     # Add dashed lines for the mean
-    geom_hline(data = stats, aes(yintercept = mean, color = group), linetype = "dashed", size = 0.5, alpha = 0.5) +
-    geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "solid", size = 0.5, alpha = 0.5) +
+    geom_hline(data = stats, aes(yintercept = mean, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5) +
+    geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "solid", linewidth = 0.5, alpha = 0.5) +
     coord_cartesian(ylim = c(0, cap_threshold)) +
     geom_point(
       data = stats,
