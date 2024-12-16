@@ -32,7 +32,7 @@
     <img src="images/ViPeaQ_flowchart.png">
   </a>
 
-<h3 align="center">ViPeaQ</h3>
+<h2 align="center">ViPeaQ</h2>
 
   <p align="center">
     This tool is designed to evaluate ChIP signal over a viral genome by comparison with the host ChIP signal.
@@ -47,7 +47,6 @@
     <a href="https://github.com/VirusGenomics/ViPeaQ/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
-
 
 
 <!-- TABLE OF CONTENTS -->
@@ -81,11 +80,11 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
+<p align="justify">
 Chromatin immunoprecipitation (ChIP) coupled with high-throughput sequencing (ChIP-Seq) is widely used to quantify chromatin states, such as DNA or histone modifications, across many different genomes. Analysis of the differential occupancy between a protein-DNA complex immunoprecipitated with an antibody specific for the protein of interest and an input sample is the basis of ChIP peak calling. Over the years, several bioinformatics tools have been developed. MACS2 and SICER are among the most widely used and rely on statistical models to capture local biases in the genome for sharp or diffuse profiles, respectively. The epigenetic regulation of cellular chromatin and nuclear replicating DNA viruses share similar underlying mechanisms, but a key difference lies in their chromatin dynamics. While cellular chromatin in differentiating or terminally differentiated cells is generally characterized by discrete epigenetic states, viral chromatin patterns are frequently much more complex.  
 The complexity of viral ChIP-seq patterns can result from highly variable genome copy numbers and different replication stages of individual viral genomes. As a consequence, proper quantification of viral epigenetic profiles is a very challenging task. Therefore, we aimed to develop  a bioinformatic method that allows distinguishing between background noise or technical artifacts versus biologically relevant enrichment of epigenetic modifications on viral genomes.
 We developed a statistical model for viral peak quantification (ViPeaQ), which calculates a level of non-specific chromatin-associated variation on the host genome after input correction and uses it as a normalization factor for host positive signal (peaks) and viral genome enrichment quantification. Using various datasets from published and ongoing studies, we show that our strategy allows accurate determination and quantification of chromatin factor / histon modification ChIP-Seq signals in direct relation to host regions, thereby discriminating true signal from background. Furthermore, the pipeline provides graphical output that allows for easy interpretation by non-bionformatics trained researchers.
+</p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -252,7 +251,7 @@ Project Link: [https://github.com/VirusGenomics/ViPeaQ](https://github.com/Virus
 [issues-url]: https://github.com/VirusGenomics/ViPeaQ/issues
 [license-shield]: https://img.shields.io/github/license/VirusGenomics/ViPeaQ.svg?style=for-the-badge
 [license-url]: https://github.com/VirusGenomics/ViPeaQ/blob/master/LICENSE.txt
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: images/LIV_Logo_Icon_cmyk.jpg
 [GNU Bash]: https://img.shields.io/badge/GNU%20Bash-4EAA25?style=for-the-badge&logo=GNU%20Bash&logoColor=white
 [GNU-url]: https://www.gnu.org/software/bash/
 [R Project]: https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=R&logoColor=white
