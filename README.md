@@ -28,8 +28,6 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-
-
 <h1 align="center">ViPeaQ</h1>
 
   <p align="center">
@@ -48,7 +46,7 @@
   <a href="https://github.com/VirusGenomics/ViPeaQ">
   <img src="images/ViPeaQ_flowchart.png">
   </a>
-  
+
 </div>
 
 
