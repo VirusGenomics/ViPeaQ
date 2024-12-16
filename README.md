@@ -255,7 +255,7 @@ Project Link: [https://github.com/VirusGenomics/ViPeaQ](https://github.com/Virus
 [license-url]: https://github.com/VirusGenomics/ViPeaQ/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
 [GNU Bash]: https://img.shields.io/badge/GNU%20Bash-4EAA25?style=for-the-badge&logo=GNU%20Bash&logoColor=white
-[GNU-url]: https://https://www.gnu.org/software/bash/
+[GNU-url]: https://www.gnu.org/software/bash/
 [R Project]: https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=R&logoColor=white
 [R-url]: https://www.r-project.org/
 [Perl]: https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logoColor=white
