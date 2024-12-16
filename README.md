@@ -85,7 +85,9 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://example.com)
 
-Here's a blank template to get started: To avoid retyping too much info. Do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`
+Chromatin immunoprecipitation (ChIP) coupled with high-throughput sequencing (ChIP-Seq) is widely used to quantify chromatin states, such as DNA or histone modifications, across many different genomes. Analysis of the differential occupancy between a protein-DNA complex immunoprecipitated with an antibody specific for the protein of interest and an input sample is the basis of ChIP peak calling. Over the years, several bioinformatics tools have been developed. MACS2 and SICER are among the most widely used and rely on statistical models to capture local biases in the genome for sharp or diffuse profiles, respectively. The epigenetic regulation of cellular chromatin and nuclear replicating DNA viruses share similar underlying mechanisms, but a key difference lies in their chromatin dynamics. While cellular chromatin in differentiating or terminally differentiated cells is generally characterized by discrete epigenetic states, viral chromatin patterns are frequently much more complex.  
+The complexity of viral ChIP-seq patterns can result from highly variable genome copy numbers and different replication stages of individual viral genomes. As a consequence, proper quantification of viral epigenetic profiles is a very challenging task. Therefore, we aimed to develop  a bioinformatic method that allows distinguishing between background noise or technical artifacts versus biologically relevant enrichment of epigenetic modifications on viral genomes. 
+We developed a statistical model for viral peak quantification (ViPeaQ), which calculates a level of non-specific chromatin-associated variation on the host genome after input correction and uses it as a normalization factor for host positive signal (peaks) and viral genome enrichment quantification. Using various datasets from published and ongoing studies, we show that our strategy allows accurate determination and quantification of chromatin factor / histon modification ChIP-Seq signals in direct relation to host regions, thereby discriminating true signal from background. Furthermore, the pipeline provides graphical output that allows for easy interpretation by non-bionformatics trained researchers.   
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -93,14 +95,9 @@ Here's a blank template to get started: To avoid retyping too much info. Do a se
 
 ### Built With
 
-* [![Next][Next.js]][Next-url]
-* [![React][React.js]][React-url]
-* [![Vue][Vue.js]][Vue-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Svelte][Svelte.dev]][Svelte-url]
-* [![Laravel][Laravel.com]][Laravel-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
+* [![GNU][GNU Bash]][GNU-url]
+* [![R][R Project]][R-url]
+* [![Perl][Perl]][Perl-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -256,22 +253,10 @@ Project Link: [https://github.com/VirusGenomics/ViPeaQ](https://github.com/Virus
 [issues-url]: https://github.com/VirusGenomics/ViPeaQ/issues
 [license-shield]: https://img.shields.io/github/license/VirusGenomics/ViPeaQ.svg?style=for-the-badge
 [license-url]: https://github.com/VirusGenomics/ViPeaQ/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/linkedin_username
 [product-screenshot]: images/screenshot.png
-[Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
-[Next-url]: https://nextjs.org/
-[React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
-[React-url]: https://reactjs.org/
-[Vue.js]: https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D
-[Vue-url]: https://vuejs.org/
-[Angular.io]: https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white
-[Angular-url]: https://angular.io/
-[Svelte.dev]: https://img.shields.io/badge/Svelte-4A4A55?style=for-the-badge&logo=svelte&logoColor=FF3E00
-[Svelte-url]: https://svelte.dev/
-[Laravel.com]: https://img.shields.io/badge/Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white
-[Laravel-url]: https://laravel.com
-[Bootstrap.com]: https://img.shields.io/badge/Bootstrap-563D7C?style=for-the-badge&logo=bootstrap&logoColor=white
-[Bootstrap-url]: https://getbootstrap.com
-[JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
-[JQuery-url]: https://jquery.com 
+[GNU Bash]: https://img.shields.io/badge/GNU%20Bash-4EAA25?style=for-the-badge&logo=GNU%20Bash&logoColor=white
+[GNU-url]: https://https://www.gnu.org/software/bash/
+[R Project]: https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=R&logoColor=white
+[R-url]: https://www.r-project.org/
+[Perl]: https://img.shields.io/badge/Perl-39457E?style=for-the-badge&logo=perl&logoColor=white
+[Perl-url]: https://www.perl.org/
