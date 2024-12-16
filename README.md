@@ -108,11 +108,11 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 
 **GNU Core Utilities**
 - Basic shell utilities like `awk`, `sed`, `sort`, `mkdir`, and `cut` are required.
-**`getopt`**
-**`wget`**
-**`gzip`/`gunzip`**
-**`bc`**
-**`column`**
+- **`getopt`**
+- **`wget`**
+- **`gzip`/`gunzip`**
+- **`bc`**
+- **`column`**
 
 ### Prerequisites
 
