@@ -28,9 +28,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/VirusGenomics/ViPeaQ">
-    <img src="images/ViPeaQ_flowchart.png">
-  </a>
+
 
 <h1 align="center">ViPeaQ</h1>
 
@@ -46,6 +44,11 @@
     ·
     <a href="https://github.com/VirusGenomics/ViPeaQ/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
+
+  <a href="https://github.com/VirusGenomics/ViPeaQ">
+  <img src="images/ViPeaQ_flowchart.png">
+  </a>
+  
 </div>
 
 
