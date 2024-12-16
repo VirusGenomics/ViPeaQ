@@ -131,6 +131,13 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 - [Statistics::Basic](https://metacpan.org/pod/Statistics::Basic)
 - [List::Util](https://perldoc.perl.org/List::Util)
 
+### R Packages
+
+- [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html)
+- [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
+- [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html)
+- [ggtext](https://cran.r-project.org/web/packages/ggtext/index.html)
+
 ### Installation
 
 ```sh
