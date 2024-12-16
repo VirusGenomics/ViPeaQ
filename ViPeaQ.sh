@@ -4,6 +4,10 @@
 # A. Robitaille (alexis.robitaille@leibniz-liv.de)
 # Leibniz Institute of Virology - Hamburg
 
+# List all the libraries needed to run that script
+Getopt::Long
+File::Basename
+
 # exit when any command fails
 set -e
 
@@ -20,7 +24,7 @@ x=10  # Set the percentile value here
 #	Shell/Bash
 #	bedtools v2.30.0
 #	Blacklist https://github.com/Boyle-Lab/Blacklist/	(not used yet)
-#	subread-2.0.3
+
 #	sambamba 1.0.0
 
 #	Perl
