@@ -10,14 +10,6 @@ use Scalar::Util qw(looks_like_number);
 use Statistics::Basic qw(:all nofill);
 use List::Util qw(sum);
 
-#~ use Array::Utils qw(:all);
-#~ use List::Compare;
-#~ use List::MoreUtils qw(uniq);
-#~ use Storable;
-#~ use feature 'unicode_strings';
-#~ use utf8;
-
-#~ use Math::Round qw(:all);
 
 
 my %opts = ();

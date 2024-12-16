@@ -108,11 +108,11 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 
 **GNU Core Utilities**
 - Basic shell utilities like `awk`, `sed`, `sort`, `mkdir`, and `cut` are required.
-- **`getopt`**
-- **`wget`**
-- **`gzip`/`gunzip`**
-- **`bc`**
-- **`column`**
+- `getopt`
+- `wget`
+- `gzip`/`gunzip`
+- `bc`
+- `column`
 
 ### Prerequisites
 
@@ -121,9 +121,15 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 - [sambamba](https://lomereiter.github.io/sambamba/)
 - [Samtools](https://www.htslib.org/)
 
-### Prerequisites
+### Perl Modules
 
-
+- [strict](https://perldoc.perl.org/strict)
+- [warnings](https://perldoc.perl.org/warnings)
+- [Getopt::Std](https://perldoc.perl.org/Getopt::Std)
+- [File::Basename](https://perldoc.perl.org/File::Basename)
+- [Scalar::Util](https://perldoc.perl.org/Scalar::Util)
+- [Statistics::Basic](https://metacpan.org/pod/Statistics::Basic)
+- [List::Util](https://perldoc.perl.org/List::Util)
 
 ### Installation
 
