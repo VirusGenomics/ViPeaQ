@@ -309,17 +309,21 @@ dev.off()
 
 out_data_peaks <- paste(outdir,"outfile_peaks.tsv",sep="/")
 myls <- list(as.data.frame(pos_peaks_data), as.data.frame(neg_peaks_data), as.data.frame(target_data))
-max.rows <- max(length(pos_peaks_data), length(neg_peaks_data), length(target_data))
+max.rows <- max(length(pos_peaks_data$value), length(neg_peaks_data$value), length(target_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
-new_myls <- as.data.frame(do.call(cbind, new_myls))
+value_columns <- lapply(new_myls, function(x) x$value)
+new_myls <- as.data.frame(do.call(cbind, value_columns))
 colnames(new_myls) <- c("Positives", "Negatives", "Targets")
 write.table(new_myls, file = out_data_peaks, sep = "\t", row.names = FALSE)
 
 out_data_win <- paste(outdir,"outfile_win.tsv",sep="/")
 myls <- list(as.data.frame(pos_win_data), as.data.frame(neg_win_data), as.data.frame(target_data))
-max.rows <- max(length(pos_win_data), length(neg_win_data), length(target_data))
+
+
+max.rows <- max(length(pos_win_data$value), length(neg_win_data$value), length(target_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
-new_myls <- as.data.frame(do.call(cbind, new_myls))
+value_columns <- lapply(new_myls, function(x) x$value)
+new_myls <- as.data.frame(do.call(cbind, value_columns))
 colnames(new_myls) <- c("Positives", "Negatives", "Targets")
 write.table(new_myls, file = out_data_win, sep = "\t", row.names = FALSE)
 
