@@ -1,3 +1,23 @@
+
+############################
+##    LOGGING SETUP       ##
+############################
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+OUT_DIR="${PWD}/logs"
+mkdir -p "$OUT_DIR"
+
+LOG_FILE="$OUT_DIR/script_$DATE.log"
+STDOUT_FILE="$OUT_DIR/script_stdout_$DATE.log"
+STDERR_FILE="$OUT_DIR/script_stderr_$DATE.log"
+
+# Redirect stdout and stderr globally, duplicate to logfile
+exec > >(tee -a "$STDOUT_FILE" | tee -a "$LOG_FILE")
+exec 2> >(tee -a "$STDERR_FILE" | tee -a "$LOG_FILE")
+
+echo "Script started at $(date)" | tee -a "$LOG_FILE"
+echo "Script name: $(basename $0)" | tee -a "$LOG_FILE"
+echo "Parameters: $@" | tee -a "$LOG_FILE"
+
 #!/bin/bash
 
 # 09/2023
@@ -115,6 +135,7 @@ download_genome_files() {
 usage()
 {
 	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2]
+
 Alpha version 1.0
 
 Mandatory:
@@ -153,16 +174,19 @@ dir=${PWD};
 BASEDIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 
 # Gets the command name without path
-cmd(){ echo $(basename $0); }
+cmd(){ echo | tee -a "$LOG_FILE" $(basename $0); }
+
 
 # Error message
 error(){
-    echo "$(cmd): invalid option -- '$1'";
-    echo "Try '$(cmd) -h' for more information.";
+    echo | tee -a "$LOG_FILE" "$(cmd): invalid option -- '$1'";
+
+    echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
     exit 1;
 }
 
-PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c: -- "$@")
+PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -195,12 +219,15 @@ do
   no_args="false"
 done
 
-[[ "$no_args" == "true" ]] && { echo "$(cmd): No options provided"; usage; exit 1; }
+[[ "$no_args" == "true" ]] && { echo | tee -a "$LOG_FILE" >&2 "$(cmd): No options provided" 2>> "$STDERR_FILE" | tee -a "$LOG_FILE"; usage 2>> "$STDERR_FILE" | tee -a "$LOG_FILE"; exit 1 2>> "$STDERR_FILE" | tee -a "$LOG_FILE"; }
+
 
 if [ -z "$hi" ] || [ -z "$hc" ] || [ -z "$vi" ] || [ -z "$vc" ] || [ -z "$p" ]  || [ -z "$g" ] || [ -z "$o" ]
 then
-   echo "$(cmd): Missing one or more mandatory options"
-   echo "Try '$(cmd) -h' for more information.";
+   echo | tee -a "$LOG_FILE" "$(cmd): Missing one or more mandatory options"
+
+   echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
    exit 1
 else
 	hi=$(to_absolute_path "$hi")
@@ -221,8 +248,10 @@ then
 	n=200
 else
 	if ! [[ "$n" =~ ^[0-9]+$ ]]; then
-		echo "\"$n\" is not a positive integer: n parameter must be a positive integer"
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "\"$n\" is not a positive integer: n parameter must be a positive integer"
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1
 	fi
 fi
@@ -232,8 +261,10 @@ then
 	w=1000
 else
 	if ! [[ "$w" =~ ^[0-9]+$ ]]; then
-		echo "\"$w\" is not a positive integer: w parameter must be a positive integer"
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "\"$w\" is not a positive integer: w parameter must be a positive integer"
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1
 	fi
 fi
@@ -244,8 +275,10 @@ then
 	ws=0.5
 else
 	if ! [[ $ws =~ ^0(\.[0-9]+)?$ || $ws == "1" ]]; then
-		echo "$ws is not a valid floating-point number between 0 and 1";
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "$ws is not a valid floating-point number between 0 and 1";
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1
 	fi
 fi
@@ -264,8 +297,10 @@ then
 	t=2
 else
 	if ! [[ "$t" =~ ^[0-9]+$ ]]; then
-		echo "\"$t\" is not a positive integer: t parameter must be a positive integer"
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "\"$t\" is not a positive integer: t parameter must be a positive integer"
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1
 	fi
 fi
@@ -276,9 +311,12 @@ then
 fi
 
 
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "Initializing";
-echo "~~~~~~~~~~~~~~~~~~~~";
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
+echo | tee -a "$LOG_FILE" "Initializing";
+
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
 
 outdir=${o};
 
@@ -304,9 +342,12 @@ cd ${dir}
 ##	QC	##
 ##########
 ## Some statistics and associated plots on peaks file
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "QC";
-echo "~~~~~~~~~~~~~~~~~~~~";
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
+echo | tee -a "$LOG_FILE" "QC";
+
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
 
 name=$(basename "${p%.*}");
 ext="${p#*.}"
@@ -317,8 +358,10 @@ elif [ "$ext" == "narrowPeaks" ]	## macs2
 then
 	${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
 else
-	echo "\"$p\" does not have a correct file extention (\".txt\" or \".bed\"). The file must be unmodified epic2 or macs2 output."
-	echo "Try '$(cmd) -h' for more information.";
+	echo | tee -a "$LOG_FILE" "\"$p\" does not have a correct file extention (\".txt\" or \".bed\"). The file must be unmodified epic2 or macs2 output."
+
+	echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 	exit 1
 fi
 
@@ -329,7 +372,7 @@ fi
 
 #	Blacklisted
 cd ${out_genome};
-cat $(ls *.bed) | bedtools sort | bedtools merge > blacklisted.bed
+{ cat $(ls *.bed) | bedtools sort | bedtools merge > blacklisted.bed } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 cd ${dir}
 
@@ -344,9 +387,9 @@ fi
 #########################################################################################
 ##	Split host genome in same size windows (no blacklist) and count cov input and chipsig
 
-bedtools makewindows -g ${out_genome}/${g}.chrom.sizes -w $w -s $shift_size | bedtools intersect -v -a /dev/stdin -b ${out_genome}/blacklisted.bed | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/genome_win.saf
+{ bedtools makewindows -g ${out_genome}/${g}.chrom.sizes -w $w -s $shift_size | bedtools intersect -v -a /dev/stdin -b ${out_genome}/blacklisted.bed | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/genome_win.saf } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
-featureCounts -T ${t} -O -F SAF --minOverlap 50 -a ${out_genome}/genome_win.saf -o ${outdir}/genome_win_count.tsv ${hi} ${hc} 2> /dev/null
+featureCounts -T ${t} -O -F SAF --minOverlap 50 -a ${out_genome}/genome_win.saf -o ${outdir}/genome_win_count.tsv ${hi} ${hc} 2>> "$STDERR_FILE"
 
 tail -n +3 ${outdir}/genome_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/genome_win_count2.tsv
 
@@ -368,14 +411,15 @@ median_fpk_host_chip=$(cut -f 10 ${outdir}/genome_win_count.tsv | sort -n | awk 
 ##	Split viral genome in same size windows (no blacklist) and count cov input and chipsig
 
 ## Add control if empty --> BAM file header is not correctly formatted, refers to help, exit 1
-genome_name=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 2 | cut -f 1);
-genome_size=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 3)
+{ genome_name=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 2 | cut -f 1); } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
+{ genome_size=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 3) } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
-echo -e "${genome_name}\t${genome_size}" > ${out_genome}/${genome_name}.chrom.sizes
+echo | tee -a "$LOG_FILE" -e "${genome_name}\t${genome_size}" > ${out_genome}/${genome_name}.chrom.sizes
 
-bedtools makewindows -g ${out_genome}/${genome_name}.chrom.sizes -w $w -s $shift_size | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/${genome_name}_win.saf
 
-featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${out_genome}/${genome_name}_win.saf -o ${outdir}/${genome_name}_win_count.tsv ${vi} ${vc} 2> /dev/null;
+{ bedtools makewindows -g ${out_genome}/${genome_name}.chrom.sizes -w $w -s $shift_size | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/${genome_name}_win.saf } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
+
+featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${out_genome}/${genome_name}_win.saf -o ${outdir}/${genome_name}_win_count.tsv ${vi} ${vc} 2>> "$STDERR_FILE";
 
 tail -n +3 ${outdir}/${genome_name}_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/${genome_name}_win_count2.tsv
 
@@ -397,17 +441,20 @@ median_fpk_virus_chip=$(cut -f 10 ${outdir}/${genome_name}_win_count.tsv | sort 
 ##	Calculate cov and FPK on input ChiP peaks
 
 ## Add an extra step that remove chipseq peaks falling in blacklisted region of the genome (at least 10% of the peaks length)
-echo -e "Checking for potential input host peaks in blacklisted region...";
+echo | tee -a "$LOG_FILE" -e "Checking for potential input host peaks in blacklisted region...";
 
-bedtools intersect -v -a ${p} -b ${out_genome}/blacklisted.bed -wa > ${outdir}/peaks_blacklist_exc.bed
 
-bedtools intersect -a ${p} -b ${out_genome}/blacklisted.bed -wa -u > ${outdir}/peaks_excluded.bed
+bedtools intersect -v -a ${p} -b ${out_genome}/blacklisted.bed -wa > ${outdir}/peaks_blacklist_exc.bed >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
+
+bedtools intersect -a ${p} -b ${out_genome}/blacklisted.bed -wa -u > ${outdir}/peaks_excluded.bed >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 excluded_peaks=$(wc -l ${outdir}/peaks_excluded.bed | cut -f 1 -d ' ')
 
-echo -e "${excluded_peaks} overlapping with blacklisted regions of the genome; the peaks excluded can be retrieved in the file peaks_excluded.bed";
+echo | tee -a "$LOG_FILE" -e "${excluded_peaks} overlapping with blacklisted regions of the genome; the peaks excluded can be retrieved in the file peaks_excluded.bed";
 
-echo -e " ";
+
+echo | tee -a "$LOG_FILE" -e " ";
+
 
 #~ echo -e "${column_number}";
 
@@ -415,7 +462,7 @@ echo -e " ";
 
 awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/peaks_blacklist_exc.bed > ${outdir}/host_peaks.saf
 
-featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/host_peaks.saf -o ${outdir}/host_peaks_count.tsv ${hi} ${hc} 2> /dev/null;
+featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/host_peaks.saf -o ${outdir}/host_peaks_count.tsv ${hi} ${hc} 2>> "$STDERR_FILE";
 
 tail -n +3 ${outdir}/host_peaks_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/host_peaks_count2.tsv
 
@@ -436,14 +483,19 @@ median_fpk_peaks_chip=$(cut -f 10 ${outdir}/host_peaks_count.tsv | sort -n | awk
 #############################
 ##	Save statistics on a file
 touch ${outdir}/QC_stats.tsv
-echo -e "\tHost - ${host_win_count} regions (${w} bp)\t\tTarget - ${virus_win_count} regions (${w} bp)\t\tPeaks - ${peak_count} peaks\t" > ${outdir}/QC_stats.tsv
-echo -e "Median\tCoverage\tFPK\tCoverage\tFPK\tCoverage\tFPK" >> ${outdir}/QC_stats.tsv
-echo -e "INPUT\t${median_cov_host_input}\t${median_fpk_host_input}\t${median_cov_virus_input}\t${median_fpk_virus_input}\t${median_cov_peaks_input}\t${median_fpk_peaks_input}" >> ${outdir}/QC_stats.tsv
-echo -e "ChiP\t${median_cov_host_chip}\t${median_fpk_host_chip}\t${median_cov_virus_chip}\t${median_fpk_virus_chip}\t${median_cov_peaks_chip}\t${median_fpk_peaks_chip}" >> ${outdir}/QC_stats.tsv
+echo | tee -a "$LOG_FILE" -e "\tHost - ${host_win_count} regions (${w} bp)\t\tTarget - ${virus_win_count} regions (${w} bp)\t\tPeaks - ${peak_count} peaks\t" > ${outdir}/QC_stats.tsv
+
+echo | tee -a "$LOG_FILE" -e "Median\tCoverage\tFPK\tCoverage\tFPK\tCoverage\tFPK" >> ${outdir}/QC_stats.tsv
+
+echo | tee -a "$LOG_FILE" -e "INPUT\t${median_cov_host_input}\t${median_fpk_host_input}\t${median_cov_virus_input}\t${median_fpk_virus_input}\t${median_cov_peaks_input}\t${median_fpk_peaks_input}" >> ${outdir}/QC_stats.tsv
+
+echo | tee -a "$LOG_FILE" -e "ChiP\t${median_cov_host_chip}\t${median_fpk_host_chip}\t${median_cov_virus_chip}\t${median_fpk_virus_chip}\t${median_cov_peaks_chip}\t${median_fpk_peaks_chip}" >> ${outdir}/QC_stats.tsv
+
 
 column -t ${outdir}/QC_stats.tsv -o " | " -s $'\t'
 
-echo -e " ";
+echo | tee -a "$LOG_FILE" -e " ";
+
 
 ##
 ##	As an extra QC, add the input FPK of the peaks and relate it to the overall FPK value (in both cases without the bins/peaks with FPK equal to 0)
@@ -451,33 +503,45 @@ echo -e " ";
 
 
 
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "Genome Bins";
-echo "~~~~~~~~~~~~~~~~~~~~";
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
+echo | tee -a "$LOG_FILE" "Genome Bins";
+
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
 
 ###############################################################
 ##	Alerte if median Coverage/FPK too low in input for bam file
 lambda_input=0;
 
-if (( $(echo "$median_fpk_host_input < $c" |bc -l) )); then
-	echo "The median Fragment Per Kilobase (FPK) of the input bam file from the host is less than ${c} (${median_fpk_host_input})."
-	echo "Applying local lambda calculation for host input FPK calculation.";
+if (( $(echo | tee -a "$LOG_FILE" "$median_fpk_host_input < $c" |bc -l) )); then
+
+	echo | tee -a "$LOG_FILE" "The median Fragment Per Kilobase (FPK) of the input bam file from the host is less than 10 (${median_fpk_host_input})."
+
+	echo | tee -a "$LOG_FILE" "Applying local lambda calculation for host input FPK calculation.";
+
 	lambda_input=1;
 fi
 
-echo -e " ";
+echo | tee -a "$LOG_FILE" -e " ";
 
-if (( $(echo "$median_fpk_virus_input < $c" |bc -l) )); then
-	echo "The median Fragment Per Kilobase (FPK) of the input bam file from the target is less than ${c} (${median_fpk_virus_input})."
-	echo "Applying local lambda calculation for target input FPK calculation.";
+
+if (( $(echo | tee -a "$LOG_FILE" "$median_fpk_virus_input < $c" |bc -l) )); then
+
+	echo | tee -a "$LOG_FILE" "The median Fragment Per Kilobase (FPK) of the input bam file from the target is less than 10 (${median_fpk_virus_input})."
+
+	echo | tee -a "$LOG_FILE" "Applying local lambda calculation for target input FPK calculation.";
+
 	lambda_input=1;
 fi
 
-echo -e " ";
+echo | tee -a "$LOG_FILE" -e " ";
+
 ##########################################################################
 ##	Apply local lambda to host/target input coverage and FPK - Perl script
 
-if (( $(echo "$lambda_input > 0" |bc -l) )); then
+if (( $(echo | tee -a "$LOG_FILE" "$lambda_input > 0" |bc -l) )); then
+
 	## Host - genome_win_count.tsv must be sorted by chromosome and start position
 	perl ${BASEDIR}/apply_local_lambda.pl -i ${outdir}/genome_win_count.tsv -l $median_fpk_host_input -s ${nonoverlap_step_int} -c $c -o ${outdir}/genome_win_count_lambda_corrected.tsv
 
@@ -492,10 +556,13 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	rounded_median_fpk_host_input_lambda=$(printf "%.3f" "$median_fpk_host_input_lambda")
 	rounded_median_fpk_virus_input_lambda=$(printf "%.3f" "$median_fpk_virus_input_lambda")
 
-	echo "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the host is ${rounded_median_fpk_host_input_lambda} (previous value ${median_fpk_host_input}).";
-	echo "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the target is ${rounded_median_fpk_virus_input_lambda} (previous value ${median_fpk_virus_input}).";
+	echo | tee -a "$LOG_FILE" "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the host is ${rounded_median_fpk_host_input_lambda} (previous value ${median_fpk_host_input}).";
 
-	echo -e " ";
+	echo | tee -a "$LOG_FILE" "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the target is ${rounded_median_fpk_virus_input_lambda} (previous value ${median_fpk_virus_input}).";
+
+
+	echo | tee -a "$LOG_FILE" -e " ";
+
 
 	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} genome_FPK.pdf
 
@@ -503,12 +570,12 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	cut -f 2- ${outdir}/genome_win_count_lambda_corrected.tsv | sed '1d' > ${outdir}/genome_win_count_lambda_corrected.bed
 
 	## First column are entry in A and last column are overlapping entry in B
-	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count_lambda_corrected.bed -f 0.75 -F 0.75 -e -wa -wb > ${outdir}/intersect_peaks_lambda_corrected.bed
+	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count_lambda_corrected.bed -f 0.75 -F 0.75 -e -wa -wb > ${outdir}/intersect_peaks_lambda_corrected.bed >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 	
 	cut -f 10,11,12,13,14,15,16,17,18,19,20 ${outdir}/intersect_peaks_lambda_corrected.bed > ${outdir}/positives_win_count_lambda_corrected.tsv
 	
 	# Only report those entries in A that have _no overlaps_ with B
-	bedtools intersect -v -a ${outdir}/genome_win_count_lambda_corrected.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count_lambda_corrected.tsv
+	bedtools intersect -v -a ${outdir}/genome_win_count_lambda_corrected.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count_lambda_corrected.tsv >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 	
 	temp_file=$(mktemp)
 	cut -f 2- ${outdir}/${genome_name}_win_count_lambda_corrected.tsv | sed '1d' > ${temp_file}
@@ -528,7 +595,7 @@ else
 	sed $'1i SAF\tChromosome\tStart\tEnd\tStrand\tLength\tCovInput\tCovChiP\tFPKInput\tFPKChiP' ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count_header.tsv
 
 	# awk '$9 < 10' ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
-	cut -f 2- ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
+	cat ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
 	
 	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} genome_FPK.pdf
 	
@@ -536,11 +603,11 @@ else
 	cut -f 2- ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count.bed
 
 	## First column are entry in A and last column are overlapping entry in B
-	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_peaks.bed
+	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_peaks.bed >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > ${outdir}/positives_win_count.tsv
 
-	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
+	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
@@ -553,8 +620,10 @@ fi
 
 #~ lambda_peak=0;
 #~ if (( $(echo "$median_fpk_peaks_input < 10" |bc -l) )); then
-	#~ echo "The median Fragment Per Kilobase (FPK) calculated on the input of the peaks file from the host is less than 10 (${median_fpk_peaks_input})."
-	#~ echo "Applying local lambda calculation for input FPK calculation of host peaks.";
+	#~ echo | tee -a "$LOG_FILE" "The median Fragment Per Kilobase (FPK) calculated on the input of the peaks file from the host is less than 10 (${median_fpk_peaks_input})."
+
+	#~ echo | tee -a "$LOG_FILE" "Applying local lambda calculation for input FPK calculation of host peaks.";
+
 	#~ lambda_peak=1;
 #~ fi
 
@@ -597,9 +666,12 @@ fi
 ##	Host sites selection
 ##  select_positives_and_negatives_regions_host.pl --> readapted with shell commands (at the end to be removed from ViPeaQ)
 
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "Top positives and negatives";
-echo "~~~~~~~~~~~~~~~~~~~~";
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
+echo | tee -a "$LOG_FILE" "Top positives and negatives";
+
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
 
 ## here get the column number matching the v parameter
 # Enable case-insensitive matching
@@ -627,8 +699,10 @@ shopt -u nocasematch
 
 # Check if the column was found
 if [[ $column_number -eq -1 ]]; then
-	echo "The file $p does not have a header string matching '$v'.";
-	echo "Try '$(cmd) -h' for more information.";
+	echo | tee -a "$LOG_FILE" "The file $p does not have a header string matching '$v'.";
+
+	echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 	exit 1
 fi
 
@@ -665,7 +739,8 @@ rm "$sorted_counts" "$sorted_peaks"
 ######################################################
 lambda_peak=0
 
-if (( $(echo "$lambda_peak > 0" |bc -l) )); then
+if (( $(echo | tee -a "$LOG_FILE" "$lambda_peak > 0" |bc -l) )); then
+
 	## remove peaks with corrected fpk (num_columns_sorted_counts-1) below $rounded_median_fpk_peaks_input_lambda
 	columns_corrected_fpk=$(($num_columns_sorted_counts-1))
 	#~ threshold_fpk=$rounded_median_fpk_peaks_input_lambda
@@ -693,32 +768,41 @@ fi
 
 zero_lines=$(awk -F'\t' '$9 == 0 {count++} END {print count}' ${outdir}/genome_win_count.tsv)
 fraction=$(awk "BEGIN {print $zero_lines / $host_win_count}")
-echo "Fraction of genome bins with a FPK value equal to 0: $fraction"
+echo | tee -a "$LOG_FILE" "Fraction of genome bins with a FPK value equal to 0: $fraction"
+
 
 
 median_fpk_host_input_no_zero=$(awk -F'\t' '$9 != 0 {print $9}' ${outdir}/genome_win_count.tsv | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 
-echo "Median input FPK value of all genome bins: ${median_fpk_host_input}"
-echo "Median input FPK value of all genome bins with a FPK value different from 0: ${median_fpk_host_input_no_zero}"
+echo | tee -a "$LOG_FILE" "Median input FPK value of all genome bins: ${median_fpk_host_input}"
+
+echo | tee -a "$LOG_FILE" "Median input FPK value of all genome bins with a FPK value different from 0: ${median_fpk_host_input_no_zero}"
+
 
 # Filter non-zero values, sort them numerically
 values=$(awk -F'\t' '$9 != 0 {print $9}' ${outdir}/genome_win_count.tsv | sort -n)
 
 # Total number of non-zero values
-count=$(echo "$values" | wc -l)
+count=$(echo | tee -a "$LOG_FILE" "$values" | wc -l)
+
 
 # Calculate positions for the lowest and highest percentiles --> I should do the same for the bin
 low_index=$(awk "BEGIN {printf(\"%.0f\", ($x / 100) * $count)}")
 high_index=$(awk "BEGIN {printf(\"%.0f\", $count - (($x / 100) * $count) + 1)}")
 
 # Extract the values
-low_percentile=$(echo "$values" | sed -n "${low_index}p")
-high_percentile=$(echo "$values" | sed -n "${high_index}p")
+low_percentile=$(echo | tee -a "$LOG_FILE" "$values" | sed -n "${low_index}p")
 
-echo "The $x-th lowest percentile FPK value is: $low_percentile"
-echo "The $x-th highest percentile FPK value is: $high_percentile"
+high_percentile=$(echo | tee -a "$LOG_FILE" "$values" | sed -n "${high_index}p")
 
-echo "The host peaks will be filtered to excluded peaks with input FPK below $low_percentile and above $high_percentile."
+
+echo | tee -a "$LOG_FILE" "The $x-th lowest percentile FPK value is: $low_percentile"
+
+echo | tee -a "$LOG_FILE" "The $x-th highest percentile FPK value is: $high_percentile"
+
+
+echo | tee -a "$LOG_FILE" "The host peaks will be filtered to excluded peaks with input FPK below $low_percentile and above $high_percentile."
+
 
 awk -F $'\t' -v col="$columns_corrected_fpk" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count_filtered.tsv
 
@@ -731,10 +815,13 @@ remain_peaks=$(wc -l ${outdir}/host_peaks_count_filtered_sorted.tsv | cut -f 1 -
 if (( $n > $remain_peaks )); then
 	if (( $remain_peaks > 0 )); then
 		head -n "$remain_peaks" ${outdir}/host_peaks_count_filtered_sorted.tsv > ${outdir}/top_positives_peaks.tsv
-		echo "Following the filtering of the peaks, less than $n peaks are remaining. The calculation will carry on with $remain_peaks top peaks."
+		echo | tee -a "$LOG_FILE" "Following the filtering of the peaks, less than $n peaks are remaining. The calculation will carry on with $remain_peaks top peaks."
+
 	else
-		echo "No top peaks can be selected. Please check the input peaks file."
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "No top peaks can be selected. Please check the input peaks file."
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1;
 	fi
 else
@@ -746,10 +833,12 @@ median_fpk_host_input_top_positives=$(awk -F'\t' -v col="$columns_corrected_fpk"
 negatives_regions=0
 
 if (( $n > $remain_peaks )); then
-	echo "Median input FPK value of the top $remain_peaks positives peaks is: ${median_fpk_host_input_top_positives}"
+	echo | tee -a "$LOG_FILE" "Median input FPK value of the top $remain_peaks positives peaks is: ${median_fpk_host_input_top_positives}"
+
 	negatives_regions=$remain_peaks
 else
-	echo "Median input FPK value of the top $n positives peaks is: ${median_fpk_host_input_top_positives}"
+	echo | tee -a "$LOG_FILE" "Median input FPK value of the top $n positives peaks is: ${median_fpk_host_input_top_positives}"
+
 	negatives_regions=$n
 fi
 
@@ -767,7 +856,7 @@ cut -f1,2,3 ${outdir}/top_positives_peaks.tsv > ${outdir}/top_positives_peaks.be
 
 exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
 
-genome_size=$(samtools view -H ${hi} | grep '^@SQ' | awk '{sum += substr($3, 4)} END {print sum}')
+{ genome_size=$(samtools view -H ${hi} | grep '^@SQ' | awk '{sum += substr($3, 4)} END {print sum}') } >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 available_size=$(($genome_size-$exclusion_size))
 
@@ -800,99 +889,49 @@ available_size=$(($genome_size-$exclusion_size))
 # fi
 
 
-##	Here adapt the loop until the filtered negative peaks (same filter as positive FPK input value) reach the length of $n (calculate wc -l of file)
-
 i=0;
 fpk_column=9
 
-# echo -e "negatives_regions: ${negatives_regions}"
-# echo -e "i: ${i}"
-
-
 while (( $i < $negatives_regions )); do
 
-	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
-	
-	# nb_tp=$(wc -l ${outdir}/negatives_peaks_tmp.bed | awk '{print $1}')
-	# echo "For this round, at toal of ${nb_tp} negative sites have been found"
+	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed >> "$STDOUT_FILE" 2>> "$STDERR_FILE"
 
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${outdir}/negatives_peaks.bed
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file.bed
 
 	awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/negatives_peaks_tmp.bed > ${outdir}/negatives_peaks.saf
 
-	featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/negatives_peaks.saf -o ${outdir}/negative_sites_host_count.tsv ${hi} ${hc} 2> /dev/null
+	featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/negatives_peaks.saf -o ${outdir}/negative_sites_host_count.tsv ${hi} ${hc} 2>> "$STDERR_FILE"
 
 	tail -n +3 ${outdir}/negative_sites_host_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/negative_sites_host_count2.tsv
 
 	awk -v OFS='\t' '{$10 = sprintf("%.3f", $8 / ( $6 / 1000 ) )}1' ${outdir}/negative_sites_host_count2.tsv > ${outdir}/negative_sites_host_count.tsv
 
-	# nb_count=$(wc -l ${outdir}/negative_sites_host_count.tsv | awk '{print $1}')
-	# echo "For this round, at total of ${nb_count} negative sites have been processed by feature count"
-
 	rm ${outdir}/negative_sites_host_count2.tsv
 
 	awk -F $'\t' -v col="$fpk_column" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negative_sites_host_count.tsv >> ${outdir}/negative_sites_host_count_filtered.tsv
-
-	# negative_count=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 1 -d ' ')
 
 	nb=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | awk '{print $1}')
 
 	rm ${outdir}/negative_sites_host_count.tsv
 
-	# exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
-
-	# perc=$(echo "scale=10; ($exclusion_size / $available_size) * 100" | bc)
-
-	# echo "Iteration: $i"
-
-	# ((i++))
-	# let "i++"
 	i=$nb
 
 done
 
-
-##########################################################################		 NOT RELEVANT TO BE REMOVED
-##	Apply local lambda to nagtives host peaks input coverage and FPK - Perl script
-
-# if (( $(echo "$lambda_peak > 0" |bc -l) )); then
-# 	cut -f 2- ${outdir}/negative_sites_host_count.tsv > ${outdir}/negative_sites_host_count.bed
-
-# 	## First column are entry in A and last column are overlapping entry in B
-# 	bedtools intersect -a ${outdir}/negative_sites_host_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_neg.bed
-
-
-# 	perl ${BASEDIR}/apply_local_lambda_peaks.pl -i ${outdir}/genome_win_count.tsv -l 20 -o ${outdir}/negative_sites_host_count_lambda_corrected.tsv -b ${outdir}/intersect_neg.bed -p ${outdir}/negative_sites_host_count.tsv -w ${w} -s ${shift_size}
-
-# 	median_fpk_negative_sites_input_lambda=$(cut -f 12 ${outdir}/negative_sites_host_count_lambda_corrected.tsv | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }')
-
-# 	echo -e " ";
-
-# 	rounded_median_fpk_negative_sites_input_lambda=$(printf "%.3f" "$median_fpk_negative_sites_input_lambda")
-
-# 	echo "The calculated median Fragment Per Kilobase (FPK) calculated on the input of the negative distribution from the host is ${rounded_median_fpk_negative_sites_input_lambda}.";
-
-# 	echo -e " ";
-	
-# else
-# 	## Filter above 10
-	
-# fi
-
-
 ## Negatives
 remain_peaks_neg=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 1 -d ' ')
-
-# echo -e "remain peaks neg: ${remain_peaks_neg}"
 
 if (( $n > $remain_peaks_neg )); then
 	if (( $remain_peaks_neg > 0 )); then
 		head -n "$remain_peaks_neg	" ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 2- > ${outdir}/top_negatives_peaks.tsv
-		echo "Following the searching of negatives peaks of same chromosomes and size distribution of the positives peaks, only $n peaks could be found."
+		echo | tee -a "$LOG_FILE" "Following the searching of negatives peaks of same chromosomes and size distribution of the positives peaks, only $n peaks could be found."
+
 	else
-		echo "No negatives peaks can be selected. Please check the blacklisted file."
-		echo "Try '$(cmd) -h' for more information.";
+		echo | tee -a "$LOG_FILE" "No negatives peaks can be selected. Please check the blacklisted file."
+
+		echo | tee -a "$LOG_FILE" "Try '$(cmd) -h' for more information.";
+
 		exit 1;
 	fi
 else
@@ -910,11 +949,15 @@ fi
 ## Viral
 # ${genome_name}_win_count_lambda_corrected.tsv
 
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "Output writing";
-echo "~~~~~~~~~~~~~~~~~~~~";
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
 
-if (( $(echo "$lambda_input > 0" |bc -l) )); then
+echo | tee -a "$LOG_FILE" "Output writing";
+
+echo | tee -a "$LOG_FILE" "~~~~~~~~~~~~~~~~~~~~";
+
+
+if (( $(echo | tee -a "$LOG_FILE" "$lambda_input > 0" |bc -l) )); then
+
 	## Here the 3 distribution to give to R are:
 	# Chromosome	Start	End	Strand	Length	CovInput	CovChiP	FPKInput	FPKChiP	CovInputCorrected	FPKInputCorrected
 	## 1) positives_win_count_lambda_corrected.tsv
@@ -925,21 +968,20 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > ${outdir}/positives_win_count_lambda_corrected_filtered.tsv
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv
 
+echo "Executing: Rscript ${BASEDIR}/ChiP_statistics_all.R ${outdir}/top_positives_peaks.tsv ${outdir}/top_negatives_peaks.tsv ${outdir}/${genome_name}_win_count_lambda_corrected.tsv ${outdir}/positives_win_count_lambda_corrected_filtered.tsv ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv ${outdir} $lambda_input" | tee -a "$LOG_FILE"
 	Rscript ${BASEDIR}/ChiP_statistics_all.R \
-	${outdir}/top_positives_peaks.tsv \
-	${outdir}/top_negatives_peaks.tsv \
-	${outdir}/${genome_name}_win_count_lambda_corrected.tsv \
-	${outdir}/positives_win_count_lambda_corrected_filtered.tsv \
-	${outdir}/negatives_win_count_lambda_corrected_filtered.tsv \
-	${outdir} \
-	$lambda_input
+    ${outdir}/top_positives_peaks.tsv \
+    ${outdir}/top_negatives_peaks.tsv \
+    ${outdir}/${genome_name}_win_count_lambda_corrected.tsv \
+    ${outdir}/positives_win_count_lambda_corrected_filtered.tsv \
+    ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv \
+    ${outdir} \
+    $lambda_input
+	# echo | tee -a "$LOG_FILE" "lambda_corrected"
 
-	# echo "lambda_corrected"
 else
 
-	## here filtered_${genome_name}_win_count.tsv is a SAF file !!!!!! WRONG COLUMN NUMBER !!!
-
-	input_fpk_col=9
+	input_fpk_col=8
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > ${outdir}/positives_win_count_filtered.tsv
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count.tsv > ${outdir}/negatives_win_count_filtered.tsv
 
@@ -948,64 +990,13 @@ else
 	## 2) negatives_win_count.tsv
 	## 3) filtered_${genome_name}_win_count.tsv --> for now it is unfiltered on FPK value input
 
-	Rscript ${BASEDIR}/ChiP_statistics_all.R \
-	${outdir}/top_positives_peaks.tsv \
-	${outdir}/top_negatives_peaks.tsv \
-	${outdir}/filtered_${genome_name}_win_count.tsv \
-	${outdir}/positives_win_count_filtered.tsv \
-	${outdir}/negatives_win_count_filtered.tsv \
-	${outdir} \
-	$lambda_input
+echo "Executing: Rscript ${BASEDIR}/ChiP_statistics_all.R ${outdir}/top_positives_peaks.tsv ${outdir}/top_negatives_peaks.tsv ${outdir}/filtered_${genome_name}_win_count.tsv ${outdir}/positives_win_count_filtered.tsv ${outdir}/negatives_win_count_filtered.tsv ${outdir} $lambda_input" | tee -a "$LOG_FILE"
+	Rscript ${BASEDIR}/ChiP_statistics_all.R \	${outdir}/top_positives_peaks.tsv \	${outdir}/top_negatives_peaks.tsv \	${outdir}/filtered_${genome_name}_win_count.tsv \	${outdir}/positives_win_count_filtered.tsv \	${outdir}/negatives_win_count_filtered.tsv \	${outdir} \	$lambda_input
+	# echo | tee -a "$LOG_FILE" "no_lambda_corrected"
 
-	# echo "no_lambda_corrected"
 fi
 
-##
-##	Graphic output to work on
-##
+echo | tee -a "$LOG_FILE" -e "END";
 
-
-echo -e "END";
 
 exit 0
-
-# Rscript /home/robitaillea/ViPeaQ/ChiP_statistics_all2.R \
-# /home/robitaillea/test/out/top_positives_peaks.tsv \
-# /home/robitaillea/test/out/top_negatives_peaks.tsv \
-# /home/robitaillea/test/out/HQ404500_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/positives_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/negatives_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/ \
-# 1
-
-
-
-## for the plot in the end, keep only random and independantly the genome bins approach --> separate plots 
-## add title based on input file name --> see how that can be done
-
-
-##########################
-##	!!	LOG FILE	!!	## --> both for command launch and for overall outputs stderr/stdout/stdlog
-##########################
-
-# echo "Output writing";
-# Rscript ${BASEDIR}/ChiP_statistics_all.R ${outdir}/positive_sites_host_count_top*.tsv ${outdir}/negative_sites_host_count_top*_random.tsv ${outdir}/negative_sites_host_count_top_filter.tsv ${outdir}/negative_sites_host_count_all.tsv ${outdir}/genome_win_pos_count.tsv ${outdir}/genome_win_neg_count.tsv ${outdir}/virus_regions_count_filter.tsv ${outdir} BoxPlot.pdf BoxPlot_background.tsv BoxPlot_negatives.tsv BoxPlot_background_all.tsv BoxPlot_genome_bin.tsv
-
-#~ Rscript ${BASEDIR}/ChiP_statistics_all.R \
-#~ ${outdir}/positive_sites_host_count_top*.tsv \				##	1
-#~ ${outdir}/negative_sites_host_count_top*_random.tsv \		##	2
-#~ ${outdir}/negative_sites_host_count_top_filter.tsv \			##	3
-#~ ${outdir}/negative_sites_host_count_all.tsv \				##	4
-#~ ${outdir}/genome_win_pos_count.tsv \							##	5
-#~ ${outdir}/genome_win_neg_count.tsv \							##	6
-#~ ${outdir}/virus_regions_count_filter.tsv \					##	7
-#~ ${outdir} \													##	8
-#~ BoxPlot.pdf \												##	9
-#~ BoxPlot_background.tsv \										##	10
-#~ BoxPlot_negatives.tsv \										##	11
-#~ BoxPlot_background_all.tsv \									##	12
-#~ BoxPlot_genome_bin.tsv										##	13
-
-#~ Rscript ../../ChiP_statistics_all.R positive_sites_host_count_top*.tsv negative_sites_host_count_top*_random.tsv negative_sites_host_count_top_filter.tsv negative_sites_host_count_all.tsv genome_win_pos_count.tsv genome_win_neg_count.tsv virus_regions_count_filter.tsv /home/robitaillea/normalization_scripts/test2/output_bs100_bis/ BoxPlot.pdf BoxPlot_background.tsv  BoxPlot_negatives.tsv BoxPlot_background_all.tsv BoxPlot_genome_bin.tsv
-# echo "Done";
-# exit 0
