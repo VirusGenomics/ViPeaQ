@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 09/2023
+# 2024
 # A. Robitaille (alexis.robitaille@leibniz-liv.de)
 # Leibniz Institute of Virology - Hamburg
 
@@ -13,20 +13,6 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 #~ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
 
 x=10  # Set the percentile value here
-
-##########################
-##	Tools and versions	##
-##########################
-#	Shell/Bash
-#	bedtools v2.30.0
-#	Blacklist https://github.com/Boyle-Lab/Blacklist/	(not used yet)
-
-#	sambamba 1.0.0
-
-#	Perl
-#	R
-
-#	featurecounts
 
 ##################
 ##	Functions	##
@@ -55,12 +41,12 @@ to_absolute_path() {
 download_file() {
     local url=$1
     local dest=$2
-	echo "Attempting to download from: $url"
-    echo "Saving to: $dest"
+	echo "Attempting to download from: $url";
+    echo "Saving to: $dest";
     if [ ! -f "$dest" ]; then
         wget -N -q "$url" -O "$dest" || { echo "Failed to download $url"; return 1; }
     else
-        echo "$dest already exists. Skipping download."
+        echo "$dest already exists. Skipping download.";
     fi
 }
 
@@ -100,7 +86,7 @@ download_genome_files() {
             gunzip -c gap.txt.gz | cut -f 2,3,4 > hg38_N.bed
 			;; 
 		*)
-            echo "Genome $genome is not supported."
+            echo "Genome $genome is not supported.";
 			echo "Try '$(cmd) -h' for more information.";
 			exit 1
             ;;
@@ -166,7 +152,7 @@ PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
-eval set -- "$PARSED_ARGUMENTS"
+eval set -- $PARSED_ARGUMENTS
 
 # extract options and their arguments into variables.
 no_args="true"
@@ -275,14 +261,52 @@ then
 	c=10
 fi
 
-
-echo "~~~~~~~~~~~~~~~~~~~~";
-echo "Initializing";
-echo "~~~~~~~~~~~~~~~~~~~~";
+#######################
+##    LOG SETTING    ##
+#######################
 
 outdir=${o};
 
 mkdir -p $outdir;
+
+DATE=$(date +"%Y-%m-%d_%H-%M-%S")
+log_dir="${outdir}/logs"
+mkdir -p "$log_dir"
+
+LOG_FILE="$log_dir/$DATE.log"
+STDOUT_FILE="$log_dir/stdout_$DATE.log"
+STDERR_FILE="$log_dir/stderr_$DATE.log"
+
+# Redirect stdout and stderr globally, duplicate to logfile
+exec > >(tee -a "$STDOUT_FILE" | tee -a "$LOG_FILE")
+exec 2> >(tee -a "$STDERR_FILE" | tee -a "$LOG_FILE")
+
+echo "Script started at $(date)"
+echo "Script name: $(basename $0)"
+echo "Parameters:"
+#!/bin/bash
+
+#PARSED_ARGUMENTS="--hi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hg38_merge.bam' --hc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hg38_merge.bam' --vi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hq404500_merge.bam' --vc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hq404500_merge.bam' --p '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/ViPeaQ/peaks/epic2/epic_w1000_wt_parental_dmso_kshv_7dpi_h3k9me3.txt' --g 'hg38' --o 'wt_parental_dmso_kshv_7dpi_h3k9me3_nolambda_debug' --t '60' --w '10000' --"
+
+# Process the string using regex matching
+while [[ $PARSED_ARGUMENTS =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
+    key="${BASH_REMATCH[1]}"       # Capture the key (e.g., --hi)
+    value="${BASH_REMATCH[2]}"     # Capture the value (e.g., path inside quotes)
+    echo "$key : '$value'"         # Format the output as required
+    # Trim the processed part from the string
+    PARSED_ARGUMENTS="${PARSED_ARGUMENTS#*"${BASH_REMATCH[0]}"}"
+done
+
+# echo "toto";
+# exit
+
+#####################
+##    DOWNLOAD     ##
+#####################
+
+echo "~~~~~~~~~~~~~~~~~~~~";
+echo "Download";
+echo "~~~~~~~~~~~~~~~~~~~~";
 
 out_genome=$outdir"/genome"
 
@@ -292,11 +316,9 @@ cd $out_genome
 
 download_genome_files "$g"
 
-
 ##
 ##	ADD A TEST IF EACH OF THE INPUT FILE EXISTS AND NOT EMPTY
 ##
-
 
 cd ${dir}
 
@@ -313,11 +335,11 @@ ext="${p#*.}"
 if [ "$ext" == "txt" ]	## epic2
 then
 	${BASEDIR}/plot_epic2_qc.r -i ${p} -s ${name} -o ${outdir}
-elif [ "$ext" == "narrowPeaks" ]	## macs2
+elif [ "$ext" == "narrowPeak" ]	## macs2
 then
 	${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
 else
-	echo "\"$p\" does not have a correct file extention (\".txt\" or \".bed\"). The file must be unmodified epic2 or macs2 output."
+	echo "\"$p\" does not have a correct file extention (\".txt\" or \".narrowPeak\"). The file must be unmodified epic2 or macs2 output."
 	echo "Try '$(cmd) -h' for more information.";
 	exit 1
 fi
@@ -687,10 +709,6 @@ fi
 ##	report the median FPK value of the top n peaks and compare it to the median FPK value of all the bins in the genome (excluding the one equal to 0)
 ##
 
-##
-##	No consideration for potential lambda correction --> peak so no lambda corerection anyway
-##
-
 zero_lines=$(awk -F'\t' '$9 == 0 {count++} END {print count}' ${outdir}/genome_win_count.tsv)
 fraction=$(awk "BEGIN {print $zero_lines / $host_win_count}")
 echo "Fraction of genome bins with a FPK value equal to 0: $fraction"
@@ -753,12 +771,6 @@ else
 	negatives_regions=$n
 fi
 
-##
-##	Check up to here, make sure that shuffling is working properly, no extra filter on the negatives distribution, then pass it to the R script for plotting
-##	Need to work on improving the plot, Jan had ideas (postits somewhere)
-##
-
-
 cut -f1,2,3 ${out_genome}/blacklisted.bed > ${out_genome}/exclusion_file.bed
 
 cut -f1,2,3 ${outdir}/top_positives_peaks.tsv >> ${out_genome}/exclusion_file.bed
@@ -799,23 +811,12 @@ available_size=$(($genome_size-$exclusion_size))
 # 	echo -e "The total genome size covered by the negative regions is ${perc}% of the genome length (excluding positive regions and blacklisted regions)."
 # fi
 
-
-##	Here adapt the loop until the filtered negative peaks (same filter as positive FPK input value) reach the length of $n (calculate wc -l of file)
-
 i=0;
 fpk_column=9
 
-# echo -e "negatives_regions: ${negatives_regions}"
-# echo -e "i: ${i}"
-
-
 while (( $i < $negatives_regions )); do
-
 	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
 	
-	# nb_tp=$(wc -l ${outdir}/negatives_peaks_tmp.bed | awk '{print $1}')
-	# echo "For this round, at toal of ${nb_tp} negative sites have been found"
-
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${outdir}/negatives_peaks.bed
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file.bed
 
@@ -827,29 +828,15 @@ while (( $i < $negatives_regions )); do
 
 	awk -v OFS='\t' '{$10 = sprintf("%.3f", $8 / ( $6 / 1000 ) )}1' ${outdir}/negative_sites_host_count2.tsv > ${outdir}/negative_sites_host_count.tsv
 
-	# nb_count=$(wc -l ${outdir}/negative_sites_host_count.tsv | awk '{print $1}')
-	# echo "For this round, at total of ${nb_count} negative sites have been processed by feature count"
-
 	rm ${outdir}/negative_sites_host_count2.tsv
 
 	awk -F $'\t' -v col="$fpk_column" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negative_sites_host_count.tsv >> ${outdir}/negative_sites_host_count_filtered.tsv
-
-	# negative_count=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 1 -d ' ')
 
 	nb=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | awk '{print $1}')
 
 	rm ${outdir}/negative_sites_host_count.tsv
 
-	# exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
-
-	# perc=$(echo "scale=10; ($exclusion_size / $available_size) * 100" | bc)
-
-	# echo "Iteration: $i"
-
-	# ((i++))
-	# let "i++"
 	i=$nb
-
 done
 
 
@@ -883,8 +870,6 @@ done
 
 ## Negatives
 remain_peaks_neg=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 1 -d ' ')
-
-# echo -e "remain peaks neg: ${remain_peaks_neg}"
 
 if (( $n > $remain_peaks_neg )); then
 	if (( $remain_peaks_neg > 0 )); then
@@ -934,10 +919,7 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	${outdir} \
 	$lambda_input
 
-	# echo "lambda_corrected"
 else
-
-	## here filtered_${genome_name}_win_count.tsv is a SAF file !!!!!! WRONG COLUMN NUMBER !!!
 
 	input_fpk_col=9
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > ${outdir}/positives_win_count_filtered.tsv
@@ -957,55 +939,8 @@ else
 	${outdir} \
 	$lambda_input
 
-	# echo "no_lambda_corrected"
 fi
-
-##
-##	Graphic output to work on
-##
-
 
 echo -e "END";
 
 exit 0
-
-# Rscript /home/robitaillea/ViPeaQ/ChiP_statistics_all2.R \
-# /home/robitaillea/test/out/top_positives_peaks.tsv \
-# /home/robitaillea/test/out/top_negatives_peaks.tsv \
-# /home/robitaillea/test/out/HQ404500_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/positives_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/negatives_win_count_lambda_corrected.tsv \
-# /home/robitaillea/test/out/ \
-# 1
-
-
-
-## for the plot in the end, keep only random and independantly the genome bins approach --> separate plots 
-## add title based on input file name --> see how that can be done
-
-
-##########################
-##	!!	LOG FILE	!!	## --> both for command launch and for overall outputs stderr/stdout/stdlog
-##########################
-
-# echo "Output writing";
-# Rscript ${BASEDIR}/ChiP_statistics_all.R ${outdir}/positive_sites_host_count_top*.tsv ${outdir}/negative_sites_host_count_top*_random.tsv ${outdir}/negative_sites_host_count_top_filter.tsv ${outdir}/negative_sites_host_count_all.tsv ${outdir}/genome_win_pos_count.tsv ${outdir}/genome_win_neg_count.tsv ${outdir}/virus_regions_count_filter.tsv ${outdir} BoxPlot.pdf BoxPlot_background.tsv BoxPlot_negatives.tsv BoxPlot_background_all.tsv BoxPlot_genome_bin.tsv
-
-#~ Rscript ${BASEDIR}/ChiP_statistics_all.R \
-#~ ${outdir}/positive_sites_host_count_top*.tsv \				##	1
-#~ ${outdir}/negative_sites_host_count_top*_random.tsv \		##	2
-#~ ${outdir}/negative_sites_host_count_top_filter.tsv \			##	3
-#~ ${outdir}/negative_sites_host_count_all.tsv \				##	4
-#~ ${outdir}/genome_win_pos_count.tsv \							##	5
-#~ ${outdir}/genome_win_neg_count.tsv \							##	6
-#~ ${outdir}/virus_regions_count_filter.tsv \					##	7
-#~ ${outdir} \													##	8
-#~ BoxPlot.pdf \												##	9
-#~ BoxPlot_background.tsv \										##	10
-#~ BoxPlot_negatives.tsv \										##	11
-#~ BoxPlot_background_all.tsv \									##	12
-#~ BoxPlot_genome_bin.tsv										##	13
-
-#~ Rscript ../../ChiP_statistics_all.R positive_sites_host_count_top*.tsv negative_sites_host_count_top*_random.tsv negative_sites_host_count_top_filter.tsv negative_sites_host_count_all.tsv genome_win_pos_count.tsv genome_win_neg_count.tsv virus_regions_count_filter.tsv /home/robitaillea/normalization_scripts/test2/output_bs100_bis/ BoxPlot.pdf BoxPlot_background.tsv  BoxPlot_negatives.tsv BoxPlot_background_all.tsv BoxPlot_genome_bin.tsv
-# echo "Done";
-# exit 0
