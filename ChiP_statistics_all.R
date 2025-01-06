@@ -1,4 +1,8 @@
 #!/usr/bin/env Rscript
+
+# Suppress warnings globally
+options(warn = -1)
+
 args = commandArgs(trailingOnly=TRUE)
 
 ######## Packages ##########
@@ -9,18 +13,9 @@ suppressMessages(require(gridExtra))
 suppressMessages(library(ggtext))
 
 ######## Load data ########
-# test if there is at least five argument: if not, return an error
 if (length(args)<7) {
   stop("At least 6 arguments must be supplied", call.=FALSE)
 }
-
-# args[1] <- "/home/robitaillea/test/out/top_positives_peaks.tsv"
-# args[2] <- "/home/robitaillea/test/out/top_negatives_peaks.tsv"
-# args[3] <- "/home/robitaillea/test/out/HQ404500_win_count_lambda_corrected.tsv"
-# args[4] <- "/home/robitaillea/test/out/positives_win_count_lambda_corrected_filtered.tsv"
-# args[5] <- "/home/robitaillea/test/out/negatives_win_count_lambda_corrected_filtered.tsv"
-# args[6] <- "/home/robitaillea/test/out/"
-# args[7] <- 1
 
 pos_peaks <- read.table(args[1], header=F, sep="\t", quote="\"")
 
@@ -123,74 +118,6 @@ stat_box_data_win <- function(y, upper_limit = max(plot.data_win$value) * 1.3) {
 ############
 ##  PLOT  ##
 ############
-
-# means_peaks <- plot.data_peaks %>%
-#   group_by(group) %>%
-#   summarise(mean_value = mean(value, na.rm = TRUE))
-# 
-# invisible({
-#   plot_peaks <- ggplot(plot.data_peaks, aes(x=group, y=value, fill=group)) + 
-#     geom_violin(trim=TRUE) + 
-#     scale_fill_manual(values=c("grey","orange","red")) +
-#     scale_x_discrete(limits=c("Positives", "Negatives", "Targets")) +
-#     # stat_boxplot(geom ='errorbar',width = 0.025) +
-#     theme_classic() +
-#     theme(legend.position="none") +
-#     stat_summary(fun = "mean", geom="point", shape=23, size=2) +
-#     stat_summary(fun.data = stat_box_data_peaks, geom = "text", hjust = 0.5, vjust = 0.9) +
-#     geom_boxplot(width=0.05) +
-#     labs(x="Random 200 (neg sites)", y = "ChiP Signal") +
-#     geom_hline(data = means_peaks, aes(yintercept = mean_value, color = group), linetype = "dashed", linewidth = 0.25) +
-#     scale_color_manual(values = c("darkgrey", "orange", "red"))
-# })
-# 
-# # Generate the plot
-# plot_peaks <- ggplot(plot.data_peaks, aes(x = group, y = value, fill = group)) + 
-#   geom_violin(trim = TRUE, alpha = 0.6) + 
-#   scale_fill_manual(values = c("grey", "orange", "red")) +
-#   scale_x_discrete(limits = c("Positives", "Negatives", "Targets")) +
-#   theme_minimal() +
-#   theme(
-#     text = element_text(size = 14),
-#     axis.title = element_text(size = 16, face = "bold"),
-#     axis.text = element_text(size = 12),
-#     legend.position = "none",
-#     plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
-#     plot.caption = element_text(size = 10, hjust = 0)
-#   ) +
-#   labs(
-#     title = "ChIP Signal Distribution Across Genome Bins",
-#     x = "Genome Bins (Negative Sites)",
-#     y = "ChIP Signal",
-#     caption = "Dashed lines represent the mean signal value for each group."
-#   ) +
-#   stat_summary(fun = "mean", geom = "point", shape = 23, size = 3, fill = "white") +
-#   stat_summary(fun.data = stat_box_data_peaks, geom = "text", hjust = 0.5, vjust = 0.9, size = 5) +
-#   geom_boxplot(width = 0.05, outlier.size = 0.5) +
-#   geom_hline(data = means, aes(yintercept = mean_value, color = group), 
-#              linetype = "dashed", size = 0.8) +
-#   scale_color_manual(values = c("grey", "orange", "red"))
-# 
-# means_win <- plot.data_win %>%
-#   group_by(group) %>%
-#   summarise(mean_value = mean(value, na.rm = TRUE))
-# 
-# invisible({
-#   plot_win <- ggplot(plot.data_win, aes(x=group, y=value, fill=group)) + 
-#     geom_violin(trim=TRUE) + 
-#     scale_fill_manual(values=c("grey","orange","red")) +
-#     scale_x_discrete(limits=c("Positives", "Negatives", "Targets")) +
-#     # stat_boxplot(geom ='errorbar',width = 0.025) +
-#     theme_classic() +
-#     theme(legend.position="none") +
-#     stat_summary(fun = "mean", geom="point", shape=23, size=2) +
-#     stat_summary(fun.data = stat_box_data_win, geom = "text", hjust = 0.5, vjust = 0.9) +
-#     geom_boxplot(width=0.05) +
-#     labs(x="Genome bins (neg sites)", y = "ChiP Signal") +
-#     geom_hline(data = means_win, aes(yintercept = mean_value, color = group), linetype = "dashed", linewidth = 0.25) +
-#     scale_color_manual(values = c("darkgrey", "orange", "red"))
-# })
-
 create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
   # Compute stats for the plot
   stats <- plot.data %>%
@@ -318,18 +245,9 @@ write.table(new_myls, file = out_data_peaks, sep = "\t", row.names = FALSE)
 
 out_data_win <- paste(outdir,"outfile_win.tsv",sep="/")
 myls <- list(as.data.frame(pos_win_data), as.data.frame(neg_win_data), as.data.frame(target_data))
-
-
 max.rows <- max(length(pos_win_data$value), length(neg_win_data$value), length(target_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
 value_columns <- lapply(new_myls, function(x) x$value)
 new_myls <- as.data.frame(do.call(cbind, value_columns))
 colnames(new_myls) <- c("Positives", "Negatives", "Targets")
 write.table(new_myls, file = out_data_win, sep = "\t", row.names = FALSE)
-
-
-
-
-
-# g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, "ChiP Signal Distribution Across Genome Peaks", "Genome Regions"), nrow=1, ncol=1)
-# g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, "ChiP Signal Distribution Across Genome Bins", "Genome Bins"), nrow=1, ncol=1)

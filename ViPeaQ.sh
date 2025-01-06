@@ -292,8 +292,6 @@ echo "Command:"
 echo "$FULL_COMMAND"
 echo "Parameters:"
 
-#PARSED_ARGUMENTS="--hi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hg38_merge.bam' --hc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hg38_merge.bam' --vi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hq404500_merge.bam' --vc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hq404500_merge.bam' --p '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/ViPeaQ/peaks/epic2/epic_w1000_wt_parental_dmso_kshv_7dpi_h3k9me3.txt' --g 'hg38' --o 'wt_parental_dmso_kshv_7dpi_h3k9me3_nolambda_debug' --t '60' --w '10000' --"
-
 # Process the string using regex matching
 while [[ $PARSED_ARGUMENTS =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
     key="${BASH_REMATCH[1]}"       # Capture the key (e.g., --hi)
@@ -760,7 +758,8 @@ while (( $i < $negatives_regions )); do
 
 	nb=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | awk '{print $1}')
 
-	rm ${outdir}/negative_sites_host_count.tsv
+	rm -f ${outdir}/negative_sites_host_count.tsv
+	rm -f ${outdir}/negative_sites_host_count.tsv.summary
 
 	i=$nb
 done
@@ -836,6 +835,46 @@ else
 
 fi
 
-echo -e "END";
+##################
+##	Cleaning	##
+##################
+## Some statistics and associated plots on peaks file
+echo "~~~~~~~~~~~~~~~~~~~~";
+echo "Cleaning";
+echo "~~~~~~~~~~~~~~~~~~~~";
+
+rm -f ${outdir}/macs2_peaks.bed
+rm -f ${out_genome}/blacklisted.bed
+rm -f ${out_genome}/genome_win.saf
+rm -f ${out_genome}/genome_win_count.tsv
+rm -f ${outdir}/genome_win_count.tsv.summary
+rm -f ${out_genome}/${genome_name}.chrom.sizes
+rm -f ${out_genome}/${genome_name}_win.saf
+rm -f ${outdir}/${genome_name}_win_count.tsv
+rm -f ${outdir}/${genome_name}_win_count.tsv.summary
+rm -f ${outdir}/peaks_blacklist_exc.bed
+rm -f ${outdir}/host_peaks.saf
+rm -f ${outdir}/host_peaks_count.tsv
+rm -f ${outdir}/host_peaks_count.tsv.summary
+rm -f ${outdir}/host_peaks_count.bed
+rm -f ${outdir}/genome_win_count_lambda_corrected.bed
+rm -f ${outdir}/intersect_peaks_lambda_corrected.bed
+rm -f ${outdir}/genome_win_count_header.tsv
+rm -f ${outdir}/genome_win_count.bed
+rm -f ${outdir}/intersect_peaks.bed
+rm -f ${outdir}/host_peaks_count.tsv
+rm -f ${outdir}/genome_win_count.tsv
+rm -f ${outdir}/host_peaks_count_filtered.tsv
+rm -f ${outdir}/host_peaks_count_filtered_sorted.tsv
+rm -f ${out_genome}/exclusion_file.bed
+rm -f ${outdir}/negatives_peaks_tmp.bed
+rm -f ${outdir}/negatives_peaks.bed
+rm -f ${outdir}/negatives_peaks.saf
+rm -f ${outdir}/negative_sites_host_count_filtered.tsv
+rm -f ${outdir}/positives_win_count_lambda_corrected.tsv
+rm -f ${outdir}/negatives_win_count_lambda_corrected.tsv
+rm -f ${outdir}/positives_win_count.tsv
+rm -f ${outdir}/negatives_win_count.tsv
+rm -f ${outdir}/top_positives_peaks.bed
 
 exit 0
