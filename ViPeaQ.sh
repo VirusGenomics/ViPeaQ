@@ -12,8 +12,6 @@ trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 # echo an error message before exiting
 trap 'status=$?; if [ $status -ne 0 ]; then echo "\"${last_command}\" command failed with exit code $status."; fi' EXIT
 
-x=10  # Set the percentile value here
-
 ##################
 ##	Functions	##
 ##################
@@ -42,7 +40,7 @@ download_file() {
     local url=$1
     local dest=$2
 	echo "Attempting to download from: $url";
-    echo "Saving to: $dest";
+    # echo "Saving to: $dest";
     if [ ! -f "$dest" ]; then
         wget -N -q "$url" -O "$dest" || { echo "Failed to download $url"; return 1; }
     else
@@ -100,7 +98,7 @@ download_genome_files() {
 
 usage()
 {
-	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2]
+	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10]
 Alpha version 1.0
 
 Mandatory:
@@ -120,6 +118,7 @@ Optional:
 	-e	exclusion region file bed format (chr	start	end) - Not Implemented
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
+	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
 
 	-h  show this help text"
 		
@@ -150,7 +149,7 @@ error(){
     exit 1;
 }
 
-PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c: -- "$@")
+PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -175,6 +174,7 @@ do
 	--e)	e="$2"		; shift	2	;;
 	--t)	t="$2"		; shift	2	;;
 	--c)	c="$2"		; shift	2	;;
+	--x)	x="$2"		; shift	2	;;
     --)		shift; break ;;
    (*) usage
        exit 1
@@ -263,6 +263,11 @@ then
 	c=10
 fi
 
+if [ -z "$x" ]
+then
+	x=10
+fi
+
 #######################
 ##    LOG SETTING    ##
 #######################
@@ -339,14 +344,14 @@ then
 elif [ "$ext" == "narrowPeak" ]	## macs2
 then
 	${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
+	sed $'1i chrom\tstart\tend\tname\tscore\tstrand\tsignal\tpvalue\tqvalue\tpeak' ${p} > ${outdir}/macs2_peaks.bed
+	p="${outdir}/macs2_peaks.bed"
 else
 	echo "\"$p\" does not have a correct file extention (\".txt\" or \".narrowPeak\"). The file must be unmodified epic2 or macs2 output."
 	echo "Try '$(cmd) -h' for more information.";
 	exit 1
 fi
 
-
-#~ echo -e " ";
 ###################################################
 ## Some statistics and associated plots on bam file
 
@@ -562,11 +567,12 @@ else
 	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > ${outdir}/positives_win_count.tsv
 
 	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
-
+	
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
 	## 3) filtered_${genome_name}_win_count.tsv
+
 fi
 
 ##########################################################################
