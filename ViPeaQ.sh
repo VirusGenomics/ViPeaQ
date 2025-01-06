@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 2024
+# 2025
 # A. Robitaille (alexis.robitaille@leibniz-liv.de)
 # Leibniz Institute of Virology - Hamburg
 
@@ -10,7 +10,7 @@ set -e
 # keep track of the last executed command
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 # echo an error message before exiting
-#~ trap 'echo "\"${last_command}\" command filed with exit code $?."' EXIT
+trap 'status=$?; if [ $status -ne 0 ]; then echo "\"${last_command}\" command failed with exit code $status."; fi' EXIT
 
 x=10  # Set the percentile value here
 
@@ -134,6 +134,8 @@ Optional:
 ##	Params	##
 ##############
 dir=${PWD};
+
+FULL_COMMAND="$0 $@"
 
 #~ BASEDIR=$(dirname "$0");
 BASEDIR="$( cd "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
@@ -264,27 +266,26 @@ fi
 #######################
 ##    LOG SETTING    ##
 #######################
+echo "~~~~~~~~~~~~~~~~~~~~";
+echo "Log";
+echo "~~~~~~~~~~~~~~~~~~~~";
 
 outdir=${o};
 
 mkdir -p $outdir;
 
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
-log_dir="${outdir}/logs"
-mkdir -p "$log_dir"
 
-LOG_FILE="$log_dir/$DATE.log"
-STDOUT_FILE="$log_dir/stdout_$DATE.log"
-STDERR_FILE="$log_dir/stderr_$DATE.log"
+LOG_FILE="$outdir/$DATE.log"
 
 # Redirect stdout and stderr globally, duplicate to logfile
-exec > >(tee -a "$STDOUT_FILE" | tee -a "$LOG_FILE")
-exec 2> >(tee -a "$STDERR_FILE" | tee -a "$LOG_FILE")
+exec > >(tee -a "$LOG_FILE")
+exec 2> >(tee -a "$LOG_FILE")
 
 echo "Script started at $(date)"
-echo "Script name: $(basename $0)"
+echo "Command:"
+echo "$FULL_COMMAND"
 echo "Parameters:"
-#!/bin/bash
 
 #PARSED_ARGUMENTS="--hi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hg38_merge.bam' --hc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hg38_merge.bam' --vi '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_01_hap1_wt_parental_dmso_kshv_7dpi_input_hq404500_merge.bam' --vc '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/230613_15_hap1_wt_parental_dmso_kshv_7dpi_h3k9me3_hq404500_merge.bam' --p '/mnt/R740/sweissmann/Projects/20230630_hap1_prc1_2_ko2_d7_chip_resequence/bam/merge/ViPeaQ/peaks/epic2/epic_w1000_wt_parental_dmso_kshv_7dpi_h3k9me3.txt' --g 'hg38' --o 'wt_parental_dmso_kshv_7dpi_h3k9me3_nolambda_debug' --t '60' --w '10000' --"
 
@@ -292,7 +293,7 @@ echo "Parameters:"
 while [[ $PARSED_ARGUMENTS =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
     key="${BASH_REMATCH[1]}"       # Capture the key (e.g., --hi)
     value="${BASH_REMATCH[2]}"     # Capture the value (e.g., path inside quotes)
-    echo "$key : '$value'"         # Format the output as required
+    echo "$key = $value"       # Format the output as required
     # Trim the processed part from the string
     PARSED_ARGUMENTS="${PARSED_ARGUMENTS#*"${BASH_REMATCH[0]}"}"
 done
@@ -471,8 +472,6 @@ echo -e " ";
 ##	As an extra QC, add the input FPK of the peaks and relate it to the overall FPK value (in both cases without the bins/peaks with FPK equal to 0)
 ##
 
-
-
 echo "~~~~~~~~~~~~~~~~~~~~";
 echo "Genome Bins";
 echo "~~~~~~~~~~~~~~~~~~~~";
@@ -570,51 +569,6 @@ else
 	## 3) filtered_${genome_name}_win_count.tsv
 fi
 
-################################################################
-##	Alerte if median Coverage/FPK too low in input for peak file
-
-#~ lambda_peak=0;
-#~ if (( $(echo "$median_fpk_peaks_input < 10" |bc -l) )); then
-	#~ echo "The median Fragment Per Kilobase (FPK) calculated on the input of the peaks file from the host is less than 10 (${median_fpk_peaks_input})."
-	#~ echo "Applying local lambda calculation for input FPK calculation of host peaks.";
-	#~ lambda_peak=1;
-#~ fi
-
-#~ echo -e " ";
-
-##########################################################################
-##	Apply local lambda to host peaks input coverage and FPK - Perl script
-
-# if (( $(echo "$lambda_peak > 0" |bc -l) )); then
-# 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
-
-# 	cut -f 2- ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count.bed
-
-# 	## First column are entry in A and last column are overlapping entry in B
-# 	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_peaks.bed
-
-# 	##
-# 	##	HERE NO LOCAL LAMBDA PEAK, just use host_peak_count.tsv or the genome_win_count_lambda_corrected.tsv
-# 	##
-	
-# 	perl ${BASEDIR}/apply_local_lambda_peaks.pl -i ${outdir}/genome_win_count.tsv -l 20 -o ${outdir}/host_peaks_count_lambda_corrected.tsv -b ${outdir}/intersect_peaks.bed -p ${outdir}/host_peaks_count.tsv -w ${w} -s ${shift_size}
-
-# 	median_fpk_peaks_input_lambda=$(cut -f 12 ${outdir}/host_peaks_count_lambda_corrected.tsv | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }')
-
-# 	echo -e " ";
-
-# 	rounded_median_fpk_peaks_input_lambda=$(printf "%.3f" "$median_fpk_peaks_input_lambda")
-
-# 	echo "The newly calculated median Fragment Per Kilobase (FPK) calculated on the input of the peaks file from the host is ${rounded_median_fpk_peaks_input_lambda} (previous value ${median_fpk_peaks_input}).";
-
-# 	echo -e " ";
-
-# else
-# 	transform filtered_genome_win_count.tsv inot pos and neg distrib
-
-# fi
-
-
 ##########################################################################
 ##	Host sites selection
 ##  select_positives_and_negatives_regions_host.pl --> readapted with shell commands (at the end to be removed from ViPeaQ)
@@ -662,12 +616,8 @@ awk 'OFS="\t" {print $1"."$2"."$3, $0}' "${outdir}/peaks_blacklist_exc.bed" | so
 
 column_number=$(($column_number+1))
 
-#	sorted_counts
-#	chr	start	end	.	len	count_input	count_chip	fpk_input	fpk_chip
-
 # Determine the number of columns in sorted_counts
 num_columns_sorted_counts=$(awk '{print NF; exit}' "$sorted_counts")
-
 
 # Construct the -o option string
 o_option="1.2"
@@ -740,8 +690,6 @@ echo "The host peaks will be filtered to excluded peaks with input FPK below $lo
 
 awk -F $'\t' -v col="$columns_corrected_fpk" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count_filtered.tsv
 
-# awk -F $'\t' -v col="$columns_corrected_fpk" -v thresh="$threshold_fpk" '$col >= thresh' ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count_filtered.tsv
-
 sort -t $'\t' -k"$num_columns_sorted_counts","$num_columns_sorted_counts"nr ${outdir}/host_peaks_count_filtered.tsv > ${outdir}/host_peaks_count_filtered_sorted.tsv
 
 remain_peaks=$(wc -l ${outdir}/host_peaks_count_filtered_sorted.tsv | cut -f 1 -d ' ')
@@ -783,34 +731,6 @@ genome_size=$(samtools view -H ${hi} | grep '^@SQ' | awk '{sum += substr($3, 4)}
 
 available_size=$(($genome_size-$exclusion_size))
 
-# bedtools shuffle -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks.bed
-
-# cat ${outdir}/negatives_peaks.bed >> ${out_genome}/exclusion_file.bed
-
-# exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
-
-# perc=$(echo "scale=10; ($exclusion_size / $available_size) * 100" | bc)
-
-# threshold=90
-# SECONDS=0
-
-# while (( $(awk -v var="$perc" -v thresh="$threshold" 'BEGIN { print (var <= thresh) }') )) && (( $SECONDS < 60 )); do
-
-# 	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
-	
-# 	cat ${outdir}/negatives_peaks_tmp.bed >> ${outdir}/negatives_peaks.bed
-# 	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file.bed
-	
-# 	exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
-
-# 	perc=$(echo "scale=10; ($exclusion_size / $available_size) * 100" | bc)
-# done
-
-# if (( $(awk -v var="$perc" -v thresh="$threshold" 'BEGIN { print (var <= thresh) }') )); then
-# 	echo -e "The search for more negative regions matching top positives peaks in chromosome location and locus size is halted due to time limit."
-# 	echo -e "The total genome size covered by the negative regions is ${perc}% of the genome length (excluding positive regions and blacklisted regions)."
-# fi
-
 i=0;
 fpk_column=9
 
@@ -839,35 +759,6 @@ while (( $i < $negatives_regions )); do
 	i=$nb
 done
 
-
-##########################################################################		 NOT RELEVANT TO BE REMOVED
-##	Apply local lambda to nagtives host peaks input coverage and FPK - Perl script
-
-# if (( $(echo "$lambda_peak > 0" |bc -l) )); then
-# 	cut -f 2- ${outdir}/negative_sites_host_count.tsv > ${outdir}/negative_sites_host_count.bed
-
-# 	## First column are entry in A and last column are overlapping entry in B
-# 	bedtools intersect -a ${outdir}/negative_sites_host_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_neg.bed
-
-
-# 	perl ${BASEDIR}/apply_local_lambda_peaks.pl -i ${outdir}/genome_win_count.tsv -l 20 -o ${outdir}/negative_sites_host_count_lambda_corrected.tsv -b ${outdir}/intersect_neg.bed -p ${outdir}/negative_sites_host_count.tsv -w ${w} -s ${shift_size}
-
-# 	median_fpk_negative_sites_input_lambda=$(cut -f 12 ${outdir}/negative_sites_host_count_lambda_corrected.tsv | sort -n | awk ' { a[i++]=$1; } END { print a[int(i/2)]; }')
-
-# 	echo -e " ";
-
-# 	rounded_median_fpk_negative_sites_input_lambda=$(printf "%.3f" "$median_fpk_negative_sites_input_lambda")
-
-# 	echo "The calculated median Fragment Per Kilobase (FPK) calculated on the input of the negative distribution from the host is ${rounded_median_fpk_negative_sites_input_lambda}.";
-
-# 	echo -e " ";
-	
-# else
-# 	## Filter above 10
-	
-# fi
-
-
 ## Negatives
 remain_peaks_neg=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 1 -d ' ')
 
@@ -892,8 +783,6 @@ fi
 ## Negatives
 # Chromosome	Start	End	Strand	Length	CovInput	CovChiP	FPKInput	FPKChiP
 # ${outdir}/top_negatives_peaks.tsv
-## Viral
-# ${genome_name}_win_count_lambda_corrected.tsv
 
 echo "~~~~~~~~~~~~~~~~~~~~";
 echo "Output writing";
