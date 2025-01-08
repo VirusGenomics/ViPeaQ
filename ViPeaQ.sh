@@ -342,7 +342,7 @@ then
 elif [ "$ext" == "narrowPeak" ]	## macs2
 then
 	${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
-	sed $'1i chrom\tstart\tend\tname\tscore\tstrand\tsignal\tpvalue\tqvalue\tpeak' ${p} > ${outdir}/macs2_peaks.bed
+	sed $'1i #chr\tstart\tend\tname\tscore\tstrand\tsignal\tpvalue\tqvalue\tpeak' ${p} > ${outdir}/macs2_peaks.bed
 	p="${outdir}/macs2_peaks.bed"
 else
 	echo "\"$p\" does not have a correct file extention (\".txt\" or \".narrowPeak\"). The file must be unmodified epic2 or macs2 output."
@@ -812,6 +812,7 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	${outdir}/negatives_win_count_lambda_corrected_filtered.tsv \
 	${outdir} \
 	$lambda_input
+
 
 else
 
