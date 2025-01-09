@@ -98,7 +98,7 @@ download_genome_files() {
 
 usage()
 {
-	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
+	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.narrowPeak -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
 Alpha version 1.0
 
 Mandatory:
@@ -106,7 +106,7 @@ Mandatory:
 	-hc	Host ChiP bam (without duplicate removal)
 	-vi	Virus input bam aligned against a single viral fasta genome (without duplicate removal)
 	-vc	Virus Chip bam aligned against a single viral fasta genome (without duplicate removal)
-	-p	Host peaks .txt (epic2) or .narrowPeaks (macs2)
+	-p	Host peaks .txt (epic2) or .narrowPeak (macs2)
 	-g	host genome name (eg. mm9, mm10, hg38, hg19)
 	-o	output directory
 	

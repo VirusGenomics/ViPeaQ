@@ -22,7 +22,7 @@
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+[![GPLv3 License][license-shield]][license-url]
 
 
 <!-- PROJECT LOGO -->
@@ -35,8 +35,6 @@
     <a href="https://github.com/VirusGenomics/ViPeaQ"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/VirusGenomics/ViPeaQ">View Demo</a>
-    ·
     <a href="https://github.com/VirusGenomics/ViPeaQ/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
     <a href="https://github.com/VirusGenomics/ViPeaQ/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
@@ -178,17 +176,40 @@ Optional:
 
 
 
-<!-- ROADMAP -->
-## Roadmap
+<!-- Parameters -->
+## Parameters
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+  * #### Mandatory
+| Name      | Example value | Description     |
+|-----------|---------------|-----------------|
+| -hi    | input_hg38.bam | BAM file of input sample for the host genome |
+| -hc    | h3k27me3_hg38.bam | BAM file of the ChIP signal for the host genome |
+| -vi    | input_kshv.bam | BAM file of input sample for the target genome |
+| -vc    | h3k27me3_kshv.bam | BAM file of the ChIP signal for the target genome |
+| -p    | peaks_h3k27me3_hg38.narrowPeak | Peaks file of the ChIP signal on the host genome |
+| -g    | hg38 | Name of the reference genome |
+| -o    | ViPeaQ_output | Output directory |
 
-See the [open issues](https://github.com/VirusGenomics/ViPeaQ/issues) for a full list of proposed features (and known issues).
+  * #### Optional
+| Name      | Default value | Description     |
+|-----------|---------------|-----------------|
+| -v   | score | The field from the peaks file (-p) used to select the top peaks |
+| -n   | 200 | Number of input peaks to be considered "top" peaks |
+| -w	| 1000	| Size of the shifting windows for the binning approach	|
+| -ws    | 0.5 | Step for the overlapping shifting windows as a fraction of the shifting windows size (-w) |
+| -e    | NA | BED file for region exclusion (not availaible yet) |
+| -t    | 2 | Threads number |
+| -c    | 10 | Expected average FPK in the host input BAM file. If below this thershold the lambda correction approach is applied  |
+| -x    | 10 | Percentile threshold for filtering the host input FPK distribution by defining two cutoff limits: a lower limit at the xth percentile and an upper limit at the (100 - x)th percentile, aimed at excluding potential technical artifacts  |
+| -P    | NA | Character string use for several output naming |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+  * #### Flags
+
+Flags are special parameters without value.
+
+| Name      | Description     |
+|-----------|-----------------|
+| -h   | Display help |
 
 
 
@@ -219,7 +240,7 @@ Don't forget to give the project a star! Thanks again!
 <!-- LICENSE -->
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the GPL-3.0 License. See `LICENSE.txt` for more information.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -228,7 +249,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
+Alexis Robitaille - [@Visit the VirusGenomics website](https://virus-genomics.de/wp/) - software@virus-genomics.de
 
 Project Link: [https://github.com/VirusGenomics/ViPeaQ](https://github.com/VirusGenomics/ViPeaQ)
 
@@ -239,9 +260,10 @@ Project Link: [https://github.com/VirusGenomics/ViPeaQ](https://github.com/Virus
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
 
-* []()
-* []()
-* []()
+* [Prof. Dr. Adam Grundhoff](https://www.leibniz-liv.de/en/contact/staff/adam-grundhoff)
+* [Dr. Thomas Günther](https://www.leibniz-liv.de/en/contact/staff/thomas-guenther)
+* [Dr. Simon Weißmann](https://www.leibniz-liv.de/en/contact/staff/simon-weissmann)
+* [Prof. Dr. Caroline Friedel](https://www.bio.ifi.lmu.de/mitarbeiter/caroline-friedel/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
