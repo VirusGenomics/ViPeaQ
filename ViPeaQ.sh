@@ -98,7 +98,7 @@ download_genome_files() {
 
 usage()
 {
-	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10]
+	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
 Alpha version 1.0
 
 Mandatory:
@@ -119,6 +119,7 @@ Optional:
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
+	-P	Prefix for output files
 
 	-h  show this help text"
 		
@@ -149,7 +150,7 @@ error(){
     exit 1;
 }
 
-PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x: -- "$@")
+PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x:,P: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -175,6 +176,7 @@ do
 	--t)	t="$2"		; shift	2	;;
 	--c)	c="$2"		; shift	2	;;
 	--x)	x="$2"		; shift	2	;;
+	--P)	P="$2"		; shift	2	;;
     --)		shift; break ;;
    (*) usage
        exit 1
@@ -266,6 +268,11 @@ fi
 if [ -z "$x" ]
 then
 	x=10
+fi
+
+if [ -z "$P" ]
+then
+	P=""
 fi
 
 #######################
@@ -459,6 +466,9 @@ median_cov_peaks_chip=$(cut -f 8 ${outdir}/host_peaks_count.tsv | sort -n | awk 
 median_fpk_peaks_chip=$(cut -f 10 ${outdir}/host_peaks_count.tsv | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 #~ echo "Median chip cov peaks ${median_cov_peaks_chip} - Median chip fpk peaks ${median_fpk_peaks_chip}";
 
+## Calculate target genome copy number per host equivalent as ${median_fpk_virus_input}/${median_fpk_host_input}
+estimated_target_genome_copy_number=$(echo "scale=2; ${median_fpk_virus_input}/${median_fpk_host_input}" | bc)
+
 #############################
 ##	Save statistics on a file
 touch ${outdir}/QC_stats.tsv
@@ -471,6 +481,9 @@ column -t ${outdir}/QC_stats.tsv -o " | " -s $'\t'
 
 echo -e " ";
 
+echo -e "Estimated target genome copy number per host genome equivalent ${estimated_target_genome_copy_number}";
+
+echo -e " ";
 ##
 ##	As an extra QC, add the input FPK of the peaks and relate it to the overall FPK value (in both cases without the bins/peaks with FPK equal to 0)
 ##
@@ -692,11 +705,19 @@ echo "The $x-th highest percentile FPK value is: $high_percentile"
 
 echo "The host peaks will be filtered to excluded peaks with input FPK below $low_percentile and above $high_percentile."
 
+initial_peaks=$(wc -l ${outdir}/host_peaks_count.tsv | cut -f 1 -d ' ')
+
 awk -F $'\t' -v col="$columns_corrected_fpk" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count_filtered.tsv
 
 sort -t $'\t' -k"$num_columns_sorted_counts","$num_columns_sorted_counts"nr ${outdir}/host_peaks_count_filtered.tsv > ${outdir}/host_peaks_count_filtered_sorted.tsv
 
 remain_peaks=$(wc -l ${outdir}/host_peaks_count_filtered_sorted.tsv | cut -f 1 -d ' ')
+
+excluded_peaks=$(( $initial_peaks - $remain_peaks ))
+
+excluded_percentage=$(echo "scale=2; $excluded_peaks / $initial_peaks * 100" | bc)
+
+echo "The number of excluded peaks is $excluded_peaks out of $initial_peaks ($excluded_percentage%)."
 
 if (( $n > $remain_peaks )); then
 	if (( $remain_peaks > 0 )); then
