@@ -149,7 +149,7 @@ git clone https://github.com/VirusGenomics/ViPeaQ.git
 <!-- USAGE EXAMPLES -->
 ## Usage
 ```
-ViPeaQ.sh -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2]
+ViPeaQ.sh -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
 Alpha version 1.0
 
 Mandatory:
@@ -169,8 +169,10 @@ Optional:
 	-e	exclusion region file bed format (chr	start	end) - Not Implemented
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
+	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
+	-P	Prefix for output files
 
-	-h  show this help text
+	-h  show this help text"
 ```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
