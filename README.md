@@ -149,7 +149,7 @@ git clone https://github.com/VirusGenomics/ViPeaQ.git
 <!-- USAGE EXAMPLES -->
 ## Usage
 ```
-ViPeaQ.sh -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
+ViPeaQ.sh -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.bed -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-s suffix]
 Alpha version 1.0
 
 Mandatory:
@@ -170,7 +170,7 @@ Optional:
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
-	-P	Prefix for output files
+	-s	Suffix for output files
 
 	-h  show this help text"
 ```
@@ -203,7 +203,7 @@ Optional:
 | -t    | 2 | Threads number |
 | -c    | 10 | Expected average FPK in the host input BAM file. If below this thershold the lambda correction approach is applied  |
 | -x    | 10 | Percentile threshold for filtering the host input FPK distribution by defining two cutoff limits: a lower limit at the xth percentile and an upper limit at the (100 - x)th percentile, aimed at excluding potential technical artifacts  |
-| -P    | NA | Character string use for several output naming |
+| -s    | NA | Character string used for several output suffix naming |
 
   * #### Flags
 

@@ -98,7 +98,7 @@ download_genome_files() {
 
 usage()
 {
-	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.narrowPeak -g hg19 -o output_dir/ [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-P prefix]
+	echo "$(basename "$0") -hi host_input.bam -hc host_chip.bam -vi virus_input.bam -vc virus_chip.bam -p peaks_host.narrowPeak -g hg19 -o output_dir [-v score] [-n 200] [-w 1000] [-ws 0.5] [-e exclusion.bed] [-t 2] [-c 10] [-x 10] [-s suffix]
 Alpha version 1.0
 
 Mandatory:
@@ -119,7 +119,7 @@ Optional:
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
-	-P	Prefix for output files
+	-s	Suffix for output files
 
 	-h  show this help text"
 		
@@ -150,7 +150,7 @@ error(){
     exit 1;
 }
 
-PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x:,P: -- "$@")
+PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x:,s: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -176,7 +176,7 @@ do
 	--t)	t="$2"		; shift	2	;;
 	--c)	c="$2"		; shift	2	;;
 	--x)	x="$2"		; shift	2	;;
-	--P)	P="$2"		; shift	2	;;
+	--s)	s="$2"		; shift	2	;;
     --)		shift; break ;;
    (*) usage
        exit 1
@@ -270,9 +270,11 @@ then
 	x=10
 fi
 
-if [ -z "$P" ]
+if [ -z "$s" ]
 then
-	P=""
+	s=""
+else
+	s="_${s}"
 fi
 
 #######################
@@ -288,7 +290,7 @@ mkdir -p $outdir;
 
 DATE=$(date +"%Y-%m-%d_%H-%M-%S")
 
-LOG_FILE="$outdir/$DATE.log"
+LOG_FILE="$outdir/$DATE${s}.log"
 
 # Redirect stdout and stderr globally, duplicate to logfile
 exec > >(tee -a "$LOG_FILE")
@@ -471,13 +473,14 @@ estimated_target_genome_copy_number=$(echo "scale=2; ${median_fpk_virus_input}/$
 
 #############################
 ##	Save statistics on a file
-touch ${outdir}/QC_stats.tsv
-echo -e "\tHost - ${host_win_count} regions (${w} bp)\t\tTarget - ${virus_win_count} regions (${w} bp)\t\tPeaks - ${peak_count} peaks\t" > ${outdir}/QC_stats.tsv
-echo -e "Median\tCoverage\tFPK\tCoverage\tFPK\tCoverage\tFPK" >> ${outdir}/QC_stats.tsv
-echo -e "INPUT\t${median_cov_host_input}\t${median_fpk_host_input}\t${median_cov_virus_input}\t${median_fpk_virus_input}\t${median_cov_peaks_input}\t${median_fpk_peaks_input}" >> ${outdir}/QC_stats.tsv
-echo -e "ChiP\t${median_cov_host_chip}\t${median_fpk_host_chip}\t${median_cov_virus_chip}\t${median_fpk_virus_chip}\t${median_cov_peaks_chip}\t${median_fpk_peaks_chip}" >> ${outdir}/QC_stats.tsv
+stats_file="${outdir}/QC_stats${s}.tsv"
+touch ${stats_file}
+echo -e "\tHost - ${host_win_count} regions (${w} bp)\t\tTarget - ${virus_win_count} regions (${w} bp)\t\tPeaks - ${peak_count} peaks\t" > ${stats_file}
+echo -e "Median\tCoverage\tFPK\tCoverage\tFPK\tCoverage\tFPK" >> ${stats_file}
+echo -e "INPUT\t${median_cov_host_input}\t${median_fpk_host_input}\t${median_cov_virus_input}\t${median_fpk_virus_input}\t${median_cov_peaks_input}\t${median_fpk_peaks_input}" >> ${stats_file}
+echo -e "ChiP\t${median_cov_host_chip}\t${median_fpk_host_chip}\t${median_cov_virus_chip}\t${median_fpk_virus_chip}\t${median_cov_peaks_chip}\t${median_fpk_peaks_chip}" >> ${stats_file}
 
-column -t ${outdir}/QC_stats.tsv -o " | " -s $'\t'
+column -t ${stats_file} -o " | " -s $'\t'
 
 echo -e " ";
 
@@ -519,12 +522,12 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	perl ${BASEDIR}/apply_local_lambda.pl -i ${outdir}/genome_win_count.tsv -l $median_fpk_host_input -s ${nonoverlap_step_int} -c $c -o ${outdir}/genome_win_count_lambda_corrected.tsv
 
 	## Target - ${genome_name}_win_count.tsv must be sorted by chromosome and start position
-	perl ${BASEDIR}/apply_local_lambda.pl -i ${outdir}/${genome_name}_win_count.tsv -l $median_fpk_virus_input -s ${nonoverlap_step_int} -c $c -o ${outdir}/${genome_name}_win_count_lambda_corrected.tsv
+	perl ${BASEDIR}/apply_local_lambda.pl -i ${outdir}/${genome_name}_win_count.tsv -l $median_fpk_virus_input -s ${nonoverlap_step_int} -c $c -o "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv"
 
 
 	median_fpk_host_input_lambda=$(cut -f 12 ${outdir}/genome_win_count_lambda_corrected.tsv| sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 
-	median_fpk_virus_input_lambda=$(cut -f 12 ${outdir}/${genome_name}_win_count_lambda_corrected.tsv | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
+	median_fpk_virus_input_lambda=$(cut -f 12 "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 
 	rounded_median_fpk_host_input_lambda=$(printf "%.3f" "$median_fpk_host_input_lambda")
 	rounded_median_fpk_virus_input_lambda=$(printf "%.3f" "$median_fpk_virus_input_lambda")
@@ -534,7 +537,7 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 
 	echo -e " ";
 
-	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} genome_FPK.pdf
+	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} "genome_FPK${s}.pdf"
 
 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
 	cut -f 2- ${outdir}/genome_win_count_lambda_corrected.tsv | sed '1d' > ${outdir}/genome_win_count_lambda_corrected.bed
@@ -542,21 +545,22 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	## First column are entry in A and last column are overlapping entry in B
 	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count_lambda_corrected.bed -f 0.75 -F 0.75 -e -wa -wb > ${outdir}/intersect_peaks_lambda_corrected.bed
 	
-	cut -f 10,11,12,13,14,15,16,17,18,19,20 ${outdir}/intersect_peaks_lambda_corrected.bed > ${outdir}/positives_win_count_lambda_corrected.tsv
+	cut -f 10,11,12,13,14,15,16,17,18,19,20 ${outdir}/intersect_peaks_lambda_corrected.bed > "${outdir}/positives_win_count_lambda_corrected.tsv"
 	
 	# Only report those entries in A that have _no overlaps_ with B
-	bedtools intersect -v -a ${outdir}/genome_win_count_lambda_corrected.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count_lambda_corrected.tsv
+	bedtools intersect -v -a ${outdir}/genome_win_count_lambda_corrected.bed -b ${outdir}/host_peaks_count.bed > "${outdir}/negatives_win_count_lambda_corrected.tsv"
 	
 	temp_file=$(mktemp)
-	cut -f 2- ${outdir}/${genome_name}_win_count_lambda_corrected.tsv | sed '1d' > ${temp_file}
- 	mv "$temp_file" "${outdir}/${genome_name}_win_count_lambda_corrected.tsv"
+	cut -f 2- "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" | sed '1d' > "${temp_file}"
+ 	mv "$temp_file" "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv"
+
 
 	# The three files are formatted as follows:
 	# Chromosome	Start	End	Strand	Length	CovInput	CovChiP	FPKInput	FPKChiP	CovInputCorrected	FPKInputCorrected
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count_lambda_corrected.tsv
 	## 2) negatives_win_count_lambda_corrected.tsv
-	## 3) ${genome_name}_win_count_lambda_corrected.tsv
+	## 3) ${genome_name}_win_count_lambda_corrected${s}.tsv
 
 else
 	## Need to add header to genome_win_count.tsv
@@ -564,10 +568,9 @@ else
 
 	sed $'1i SAF\tChromosome\tStart\tEnd\tStrand\tLength\tCovInput\tCovChiP\tFPKInput\tFPKChiP' ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count_header.tsv
 
-	# awk '$9 < 10' ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
-	cut -f 2- ${outdir}/${genome_name}_win_count.tsv > ${outdir}/filtered_${genome_name}_win_count.tsv
+	cut -f 2- ${outdir}/${genome_name}_win_count.tsv > "${outdir}/filtered_${genome_name}_win_count${s}.tsv"
 	
-	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} genome_FPK.pdf
+	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} "genome_FPK${s}.pdf"
 	
 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
 	cut -f 2- ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count.bed
@@ -575,14 +578,14 @@ else
 	## First column are entry in A and last column are overlapping entry in B
 	bedtools intersect -a ${outdir}/host_peaks_count.bed -b ${outdir}/genome_win_count.bed -wa -wb > ${outdir}/intersect_peaks.bed
 
-	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > ${outdir}/positives_win_count.tsv
+	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > "${outdir}/positives_win_count.tsv"
 
-	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > ${outdir}/negatives_win_count.tsv
+	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > "${outdir}/negatives_win_count.tsv"
 	
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
-	## 3) filtered_${genome_name}_win_count.tsv
+	## 3) filtered_${genome_name}_win_count${s}.tsv
 
 fi
 
@@ -721,7 +724,7 @@ echo "The number of excluded peaks is $excluded_peaks out of $initial_peaks ($ex
 
 if (( $n > $remain_peaks )); then
 	if (( $remain_peaks > 0 )); then
-		head -n "$remain_peaks" ${outdir}/host_peaks_count_filtered_sorted.tsv > ${outdir}/top_positives_peaks.tsv
+		head -n "$remain_peaks" ${outdir}/host_peaks_count_filtered_sorted.tsv > "${outdir}/top_positives_peaks${s}.tsv"
 		echo "Following the filtering of the peaks, less than $n peaks are remaining. The calculation will carry on with $remain_peaks top peaks."
 	else
 		echo "No top peaks can be selected. Please check the input peaks file."
@@ -729,10 +732,10 @@ if (( $n > $remain_peaks )); then
 		exit 1;
 	fi
 else
-	head -n "$n" ${outdir}/host_peaks_count_filtered_sorted.tsv > ${outdir}/top_positives_peaks.tsv
+	head -n "$n" ${outdir}/host_peaks_count_filtered_sorted.tsv > "${outdir}/top_positives_peaks${s}.tsv"
 fi
 
-median_fpk_host_input_top_positives=$(awk -F'\t' -v col="$columns_corrected_fpk" '$col != 0 {print $col}' ${outdir}/top_positives_peaks.tsv | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
+median_fpk_host_input_top_positives=$(awk -F'\t' -v col="$columns_corrected_fpk" '$col != 0 {print $col}' "${outdir}/top_positives_peaks${s}.tsv" | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 
 negatives_regions=0
 
@@ -746,9 +749,9 @@ fi
 
 cut -f1,2,3 ${out_genome}/blacklisted.bed > ${out_genome}/exclusion_file.bed
 
-cut -f1,2,3 ${outdir}/top_positives_peaks.tsv >> ${out_genome}/exclusion_file.bed
+cut -f1,2,3 "${outdir}/top_positives_peaks${s}.tsv" >> ${out_genome}/exclusion_file.bed
 
-cut -f1,2,3 ${outdir}/top_positives_peaks.tsv > ${outdir}/top_positives_peaks.bed
+cut -f1,2,3 "${outdir}/top_positives_peaks${s}.tsv" > ${outdir}/top_positives_peaks.bed
 
 exclusion_size=$(awk -F'\t' 'BEGIN{SUM=0}{ SUM+= $3 - $2 }END{print SUM}' ${out_genome}/exclusion_file.bed)
 
@@ -790,7 +793,7 @@ remain_peaks_neg=$(wc -l ${outdir}/negative_sites_host_count_filtered.tsv | cut 
 
 if (( $n > $remain_peaks_neg )); then
 	if (( $remain_peaks_neg > 0 )); then
-		head -n "$remain_peaks_neg	" ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 2- > ${outdir}/top_negatives_peaks.tsv
+		head -n "$remain_peaks_neg" ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 2- > "${outdir}/top_negatives_peaks${s}.tsv"
 		echo "Following the searching of negatives peaks of same chromosomes and size distribution of the positives peaks, only $n peaks could be found."
 	else
 		echo "No negatives peaks can be selected. Please check the blacklisted file."
@@ -798,7 +801,7 @@ if (( $n > $remain_peaks_neg )); then
 		exit 1;
 	fi
 else
-	head -n "$n" ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 2- > ${outdir}/top_negatives_peaks.tsv
+	head -n "$n" ${outdir}/negative_sites_host_count_filtered.tsv | cut -f 2- > "${outdir}/top_negatives_peaks${s}.tsv"
 fi
 
 
@@ -822,24 +825,24 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	## 3) ${genome_name}_win_count_lambda_corrected.tsv
 
 	input_fpk_col=11
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > ${outdir}/positives_win_count_lambda_corrected_filtered.tsv
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv
+	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv"
+	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv"
 
 	Rscript ${BASEDIR}/ChiP_statistics_all.R \
-	${outdir}/top_positives_peaks.tsv \
-	${outdir}/top_negatives_peaks.tsv \
-	${outdir}/${genome_name}_win_count_lambda_corrected.tsv \
-	${outdir}/positives_win_count_lambda_corrected_filtered.tsv \
-	${outdir}/negatives_win_count_lambda_corrected_filtered.tsv \
-	${outdir} \
-	$lambda_input
-
+	"${outdir}/top_positives_peaks${s}.tsv" \
+	"${outdir}/top_negatives_peaks${s}.tsv" \
+	"${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
+	"${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
+	"${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
+	"${outdir}" \
+	$lambda_input \
+	${s}
 
 else
 
 	input_fpk_col=9
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > ${outdir}/positives_win_count_filtered.tsv
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count.tsv > ${outdir}/negatives_win_count_filtered.tsv
+	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > "${outdir}/positives_win_count_filtered${s}.tsv"
+	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count.tsv > "${outdir}/negatives_win_count_filtered${s}.tsv"
 
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
@@ -847,13 +850,14 @@ else
 	## 3) filtered_${genome_name}_win_count.tsv --> for now it is unfiltered on FPK value input
 
 	Rscript ${BASEDIR}/ChiP_statistics_all.R \
-	${outdir}/top_positives_peaks.tsv \
-	${outdir}/top_negatives_peaks.tsv \
-	${outdir}/filtered_${genome_name}_win_count.tsv \
-	${outdir}/positives_win_count_filtered.tsv \
-	${outdir}/negatives_win_count_filtered.tsv \
-	${outdir} \
-	$lambda_input
+	"${outdir}/top_positives_peaks${s}.tsv" \
+	"${outdir}/top_negatives_peaks${s}.tsv" \
+	"${outdir}/filtered_${genome_name}_win_count${s}.tsv" \
+	"${outdir}/positives_win_count_filtered${s}.tsv" \
+	"${outdir}/negatives_win_count_filtered${s}.tsv" \
+	"${outdir}" \
+	$lambda_input \
+	${s}
 
 fi
 
@@ -880,6 +884,7 @@ rm -f ${outdir}/host_peaks_count.tsv
 rm -f ${outdir}/host_peaks_count.tsv.summary
 rm -f ${outdir}/host_peaks_count.bed
 rm -f ${outdir}/genome_win_count_lambda_corrected.bed
+rm -f ${outdir}/genome_win_count_lambda_corrected.tsv
 rm -f ${outdir}/intersect_peaks_lambda_corrected.bed
 rm -f ${outdir}/genome_win_count_header.tsv
 rm -f ${outdir}/genome_win_count.bed
@@ -898,5 +903,7 @@ rm -f ${outdir}/negatives_win_count_lambda_corrected.tsv
 rm -f ${outdir}/positives_win_count.tsv
 rm -f ${outdir}/negatives_win_count.tsv
 rm -f ${outdir}/top_positives_peaks.bed
+rm -f ${outdir}/macs2_peakqc.summary.txt
+rm -f ${outdir}/macs2_peakqc.plots.pdf
 
 exit 0

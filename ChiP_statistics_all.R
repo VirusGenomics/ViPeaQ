@@ -13,8 +13,8 @@ suppressMessages(require(gridExtra))
 suppressMessages(library(ggtext))
 
 ######## Load data ########
-if (length(args)<7) {
-  stop("At least 6 arguments must be supplied", call.=FALSE)
+if (length(args)<8) {
+  stop("At least 8 arguments must be supplied", call.=FALSE)
 }
 
 pos_peaks <- read.table(args[1], header=F, sep="\t", quote="\"")
@@ -30,6 +30,9 @@ neg_win <- read.table(args[5], header=F, sep="\t", quote="\"")
 outdir <- args[6]
 
 lambda <- args[7]
+
+suffix <- args[8]
+suffix <- substring(suffix, 2)
 
 #######################
 ##  CALCULATE RATIO  ##
@@ -223,18 +226,22 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
 }
 
 # plot
-out_peaks <- paste(outdir,"outfile_peaks.pdf",sep="/")
-g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, "ChiP Signal Distribution Across Genome Peaks", "Genome Regions"), nrow=1, ncol=1)
+out_peaks_name <- paste("outfile_peaks",suffix,".pdf",sep="")
+out_peaks <- paste(outdir,out_peaks_name,sep="/")
+out_title_peaks <- paste("ChiP Signal Distribution Across Genome Peaks",suffix,sep=" ")
+g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, out_title_peaks, "Genome Regions"), nrow=1, ncol=1)
 ggsave(out_peaks, g_peaks, width = 35, height = 20, units = "cm")
 dev.off()
 
-out_win <- paste(outdir,"outfile_win.pdf",sep="/")
-g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, "ChiP Signal Distribution Across Genome Bins", "Genome Bins"), nrow=1, ncol=1)
+out_win_name <- paste("outfile_win",suffix,".pdf",sep="")
+out_win <- paste(outdir,out_win_name,sep="/")
+out_title_win <- paste("ChiP Signal Distribution Across Genome Bins",suffix,sep=" ")
+g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, out_title_win, "Genome Bins"), nrow=1, ncol=1)
 ggsave(out_win, g_win, width = 35, height = 20, units = "cm")
 dev.off()
 
-
-out_data_peaks <- paste(outdir,"outfile_peaks.tsv",sep="/")
+out_data_peaks_name <- paste("outfile_peaks",suffix,".tsv",sep="")
+out_data_peaks <- paste(outdir,out_data_peaks_name,sep="/")
 myls <- list(as.data.frame(pos_peaks_data), as.data.frame(neg_peaks_data), as.data.frame(target_data))
 max.rows <- max(length(pos_peaks_data$value), length(neg_peaks_data$value), length(target_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
@@ -243,7 +250,8 @@ new_myls <- as.data.frame(do.call(cbind, value_columns))
 colnames(new_myls) <- c("Positives", "Negatives", "Targets")
 write.table(new_myls, file = out_data_peaks, sep = "\t", row.names = FALSE)
 
-out_data_win <- paste(outdir,"outfile_win.tsv",sep="/")
+out_data_win_name <- paste("outfile_win",suffix,".tsv",sep="")
+out_data_win <- paste(outdir,out_data_win_name,sep="/")
 myls <- list(as.data.frame(pos_win_data), as.data.frame(neg_win_data), as.data.frame(target_data))
 max.rows <- max(length(pos_win_data$value), length(neg_win_data$value), length(target_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
