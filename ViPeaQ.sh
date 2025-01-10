@@ -274,6 +274,8 @@ if [ -z "$s" ]
 then
 	s=""
 else
+	## replace all the spaces with _
+	s=$(echo $s | sed 's/ /_/g')
 	s="_${s}"
 fi
 
