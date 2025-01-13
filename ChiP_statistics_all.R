@@ -182,7 +182,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     scale_fill_manual(values = group_colors) +
     scale_x_discrete(limits = c("Positives", "Negatives", "Targets")) +
     scale_y_continuous(
-      name = "Mean",
+      name = "Signed Sqrt Transformed Mean",
       breaks = sort(unique(c(pretty(range(plot.data$value)), stats$mean))),
       labels = custom_left_labels,
       sec.axis = sec_axis(~., name = "Median", breaks = stats$median, labels = custom_right_labels)
