@@ -11,6 +11,7 @@ suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 suppressMessages(require(gridExtra))
 suppressMessages(library(ggtext))
+suppressMessages(library(ggbreak))
 
 ######## Load data ########
 if (length(args)<8) {
@@ -122,6 +123,10 @@ stat_box_data_win <- function(y, upper_limit = max(plot.data_win$value) * 1.3) {
 ##  PLOT  ##
 ############
 create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
+  
+  plot.data <- plot.data %>%
+    mutate(value = sign(value) * sqrt(abs(value)))
+  
   # Compute stats for the plot
   stats <- plot.data %>%
     group_by(group) %>%
@@ -135,13 +140,13 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
   # Calculate the 99.9th percentile threshold for each group and select the maximum
   cap_threshold <- plot.data %>%
     group_by(group) %>%
-    summarise(threshold = quantile(value, 1)) %>%
+    summarise(threshold = quantile(value, 0.999)) %>%
     summarise(max_threshold = max(threshold)) %>%
     pull(max_threshold)
   
   # Cap values exceeding the threshold
-  plot.data <- plot.data %>%
-    mutate(value = ifelse(value > cap_threshold, cap_threshold, value))
+  # plot.data <- plot.data %>%
+  #   mutate(value = ifelse(value > cap_threshold, cap_threshold, value))
   
   # Define custom labels for the left and right axes
   custom_left_labels <- function(y) {
