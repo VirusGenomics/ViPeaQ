@@ -135,7 +135,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
   # Calculate the 99.9th percentile threshold for each group and select the maximum
   cap_threshold <- plot.data %>%
     group_by(group) %>%
-    summarise(threshold = quantile(value, 0.999)) %>%
+    summarise(threshold = quantile(value, 1)) %>%
     summarise(max_threshold = max(threshold)) %>%
     pull(max_threshold)
   
@@ -201,8 +201,8 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       title = plot_title,
       x = x_label,
       y = NULL,
-      caption = paste("Values capped at the 99.9th percentile (", round(cap_threshold, 2), ").", sep = "",
-                      "\nDashed lines represent the mean signal; solid lines show the median.")
+      #caption = paste("Values capped at the 99.9th percentile (", round(cap_threshold, 2), ").", sep = "", "\nDashed lines represent the mean signal; solid lines show the median.")
+      caption = paste("Dashed lines represent the mean signal; solid lines show the median.")
     ) +
     
     # Add dashed lines for the mean
