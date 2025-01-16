@@ -408,15 +408,17 @@ median_fpk_host_chip=$(cut -f 10 ${outdir}/genome_win_count.tsv | sort -n | awk 
 genome_name=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 2 | cut -f 1);
 genome_size=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 3)
 
-echo -e "${genome_name}\t${genome_size}" > ${out_genome}/${genome_name}.chrom.sizes
+# echo -e "${genome_name}\t${genome_size}"
 
-bedtools makewindows -g ${out_genome}/${genome_name}.chrom.sizes -w $w -s $shift_size | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/${genome_name}_win.saf
+echo -e "${genome_name}\t${genome_size}" > "${out_genome}/${genome_name}.chrom.sizes"
+
+bedtools makewindows -g ${out_genome}/${genome_name}.chrom.sizes -w $w -s $shift_size | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > "${out_genome}/${genome_name}_win.saf"
 
 featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${out_genome}/${genome_name}_win.saf -o ${outdir}/${genome_name}_win_count.tsv ${vi} ${vc} 2> /dev/null;
 
-tail -n +3 ${outdir}/${genome_name}_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/${genome_name}_win_count2.tsv
+tail -n +3 ${outdir}/${genome_name}_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > "${outdir}/${genome_name}_win_count2.tsv"
 
-awk -v OFS='\t' '{$10 = sprintf("%.3f", $8 / ( $6 / 1000 ) )}1' ${outdir}/${genome_name}_win_count2.tsv > ${outdir}/${genome_name}_win_count.tsv
+awk -v OFS='\t' '{$10 = sprintf("%.3f", $8 / ( $6 / 1000 ) )}1' ${outdir}/${genome_name}_win_count2.tsv > "${outdir}/${genome_name}_win_count.tsv"
 
 rm ${outdir}/${genome_name}_win_count2.tsv
 
