@@ -839,8 +839,8 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	"${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
 	"${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
 	"${outdir}" \
-	$lambda_input \
-	${s}
+	"${lambda_input}" \
+	"${s}"
 
 else
 
@@ -860,8 +860,8 @@ else
 	"${outdir}/positives_win_count_filtered${s}.tsv" \
 	"${outdir}/negatives_win_count_filtered${s}.tsv" \
 	"${outdir}" \
-	$lambda_input \
-	${s}
+	"${lambda_input}" \
+	"${s}"
 
 fi
 
