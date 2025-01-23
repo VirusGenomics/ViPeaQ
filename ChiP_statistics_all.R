@@ -11,7 +11,6 @@ suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 suppressMessages(require(gridExtra))
 suppressMessages(library(ggtext))
-suppressMessages(library(ggbreak))
 
 ######## Load data ########
 if (length(args)<8) {
