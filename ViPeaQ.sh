@@ -383,7 +383,7 @@ fi
 
 bedtools makewindows -g ${out_genome}/${g}.chrom.sizes -w $w -s $shift_size | bedtools intersect -v -a /dev/stdin -b ${out_genome}/blacklisted.bed | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > ${out_genome}/genome_win.saf
 
-featureCounts -T ${t} -O -F SAF --minOverlap 50 -a ${out_genome}/genome_win.saf -o ${outdir}/genome_win_count.tsv ${hi} ${hc} 2> /dev/null
+featureCounts -T ${t} -O -F SAF --fracOverlap 0.5 -a ${out_genome}/genome_win.saf -o ${outdir}/genome_win_count.tsv ${hi} ${hc} 2> /dev/null
 
 tail -n +3 ${outdir}/genome_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/genome_win_count2.tsv
 
@@ -414,7 +414,7 @@ echo -e "${genome_name}\t${genome_size}" > "${out_genome}/${genome_name}.chrom.s
 
 bedtools makewindows -g ${out_genome}/${genome_name}.chrom.sizes -w $w -s $shift_size | awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' /dev/stdin > "${out_genome}/${genome_name}_win.saf"
 
-featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${out_genome}/${genome_name}_win.saf -o ${outdir}/${genome_name}_win_count.tsv ${vi} ${vc} 2> /dev/null;
+featureCounts -O -T ${t} -F SAF --fracOverlap 0.5 -a ${out_genome}/${genome_name}_win.saf -o ${outdir}/${genome_name}_win_count.tsv ${vi} ${vc} 2> /dev/null;
 
 tail -n +3 ${outdir}/${genome_name}_win_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > "${outdir}/${genome_name}_win_count2.tsv"
 
@@ -454,7 +454,7 @@ echo -e " ";
 
 awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/peaks_blacklist_exc.bed > ${outdir}/host_peaks.saf
 
-featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/host_peaks.saf -o ${outdir}/host_peaks_count.tsv ${hi} ${hc} 2> /dev/null;
+featureCounts -O -T ${t} -F SAF --fracOverlap 0.5 -a ${outdir}/host_peaks.saf -o ${outdir}/host_peaks_count.tsv ${hi} ${hc} 2> /dev/null;
 
 tail -n +3 ${outdir}/host_peaks_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/host_peaks_count2.tsv
 
@@ -774,7 +774,7 @@ while (( $i < $negatives_regions )); do
 
 	awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/negatives_peaks_tmp.bed > ${outdir}/negatives_peaks.saf
 
-	featureCounts -O -T ${t} -F SAF --minOverlap 50 -a ${outdir}/negatives_peaks.saf -o ${outdir}/negative_sites_host_count.tsv ${hi} ${hc} 2> /dev/null
+	featureCounts -O -T ${t} -F SAF --fracOverlap 0.5 -a ${outdir}/negatives_peaks.saf -o ${outdir}/negative_sites_host_count.tsv ${hi} ${hc} 2> /dev/null
 
 	tail -n +3 ${outdir}/negative_sites_host_count.tsv | awk -v OFS='\t' '{$9 = sprintf("%.3f", $7 / ( $6 / 1000 ) )}1' > ${outdir}/negative_sites_host_count2.tsv
 

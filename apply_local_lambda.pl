@@ -126,7 +126,6 @@ close(IN);
 my %hinput_cov_corrected=();
 my %hinput_fpk_corrected=();
 
-# my $lambda=($lambda_half*$step)+1;
 my $lambda=($lambda_half*$step);
 
 my $lambda_twice=($lambda*2)+1;
