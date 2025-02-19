@@ -208,8 +208,6 @@ Optional:
 
   * #### Flags
 
-Flags are special parameters without value.
-
 | Name      | Description     |
 |-----------|-----------------|
 | -h   | Display help |
