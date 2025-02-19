@@ -88,6 +88,22 @@ download_genome_files() {
 	esac
 }
 
+check_chromosome_naming() {
+    local bam_file="$1"
+
+    # Extract first few chromosome names from the BAM header
+    local chr_names=$(sambamba -q view -H "$bam_file" | awk '$1=="@SQ" {print $2}' | cut -d':' -f2 | head -10)
+
+    # Check for 'chr' prefix
+    if echo "$chr_names" | grep -q '^chr[0-9XYM]'; then
+        echo "chr-prefixed"
+    elif echo "$chr_names" | grep -q '^[0-9XYM]\+'; then
+        echo "numeric"
+    else
+        echo "unknown"
+    fi
+}
+
 ##############
 ##	Usage	##
 ##############
@@ -393,12 +409,35 @@ paired=0
 paired=$(sambamba view -h ${hi} | head -n 10000 | samtools view -c -f 1)
 if [[ "$paired" < 1 ]]
 then
-	echo "Single end reads detected.";
+	echo "Single end reads detected";
 	mode="";
 else
-	echo "Paired end reads detected.";
+	echo "Paired end reads detected";
 	mode="-p"
 fi
+
+
+##
+##	Change chrom.size so it contain only chr1-22, X, Y
+##
+naming_convention=$(check_chromosome_naming "${hi}")
+
+if [ "$naming_convention" == "chr-prefixed" ]
+then
+	echo "Chromosome naming convention: chr-prefixed"
+	awk '$1 ~ /^chr[0-9XY]+$/' ${out_genome}/${g}.chrom.sizes > ${out_genome}/${g}.chrom.sizes.1
+elif [ "$naming_convention" == "numeric" ]
+then
+	echo "Chromosome naming convention: numeric"
+	awk '$1 ~ /^chr[0-9XY]+$/' ${out_genome}/${g}.chrom.sizes | awk '{sub(/^chr/, ""); print}' > ${out_genome}/${g}.chrom.sizes.1
+else
+	echo "Chromosome naming convention not recognized: $naming_convention"
+	echo "Try '$(cmd) -h' for more information.";
+	exit 1
+fi
+
+rm ${out_genome}/${g}.chrom.sizes
+mv ${out_genome}/${g}.chrom.sizes.1 ${out_genome}/${g}.chrom.sizes
 
 #########################################################################################
 ##	Split host genome in same size windows (no blacklist) and count cov input and chipsig
