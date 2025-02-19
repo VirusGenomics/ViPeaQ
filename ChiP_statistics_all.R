@@ -4,6 +4,7 @@
 options(warn = -1)
 
 args = commandArgs(trailingOnly=TRUE)
+# args = c()
 
 ######## Packages ##########
 
@@ -16,6 +17,15 @@ suppressMessages(library(ggtext))
 if (length(args)<8) {
   stop("At least 8 arguments must be supplied", call.=FALSE)
 }
+
+args[1] <- "/home/robitaillea/test_thomas/test2/top_positives_peaks_cyc_h3k27me3vsH3.tsv"
+args[2] <- "/home/robitaillea/test_thomas/test2/top_negatives_peaks_cyc_h3k27me3vsH3.tsv"
+args[3] <- "/home/robitaillea/test_thomas/test2/HQ404500_win_count_lambda_corrected_cyc_h3k27me3vsH3.tsv"
+args[4] <- "/home/robitaillea/test_thomas/test2/positives_win_count_lambda_corrected_filtered_cyc_h3k27me3vsH3.tsv"
+args[5] <- "/home/robitaillea/test_thomas/test2/negatives_win_count_lambda_corrected_filtered_cyc_h3k27me3vsH3.tsv"
+args[6] <- "/home/robitaillea/test_thomas"
+args[7] <- "1"
+args[8] <- "_cyc_h3k27me3vsH3"
 
 pos_peaks <- read.table(args[1], header=F, sep="\t", quote="\"")
 
@@ -152,18 +162,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     sapply(y, function(value) {
       if (value %in% pretty(range(plot.data$value))) {
         as.character(value)
-      } else if (value %in% stats$mean) {
-        group <- stats$group[which(stats$mean == value)]
-        paste0("<span style='color:", group_colors[group], "; font-size:12px;'>", round(value, 2), "</span>")
-      } else {
-        ""
-      }
-    })
-  }
-  
-  custom_right_labels <- function(y) {
-    sapply(y, function(value) {
-      if (value %in% stats$median) {
+      } else if (value %in% stats$median) {
         group <- stats$group[which(stats$median == value)]
         paste0("<span style='color:", group_colors[group], "; font-size:12px;'>", round(value, 2), "</span>")
       } else {
@@ -172,19 +171,32 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     })
   }
   
+#  custom_right_labels <- function(y) {
+#    sapply(y, function(value) {
+#      if (value %in% stats$median) {
+#        group <- stats$group[which(stats$median == value)]
+#        paste0("<span style='color:", group_colors[group], "; font-size:12px;'>", round(value, 2), "</span>")
+#      } else {
+#        ""
+#      }
+#    })
+#  }
+  
   # Define group colors
-  group_colors <- c("Positives" = "grey", "Negatives" = "orange", "Targets" = "red")
+  group_colors <- c("Positives" = "orange", "Negatives" = "grey", "Targets" = "red")
   
   # Generate the plot
   plot_peaks <- ggplot(plot.data, aes(x = group, y = value, fill = group)) + 
     geom_violin(trim = TRUE, alpha = 0.6) + 
     scale_fill_manual(values = group_colors) +
-    scale_x_discrete(limits = c("Positives", "Negatives", "Targets")) +
+    scale_x_discrete(limits = c("Positives", "Negatives", "Targets"),
+                     labels = c("Positives" = "Positives", "Negatives" = "Background", "Targets" = "Targets")) +
     scale_y_continuous(
-      name = "Signed Sqrt Transformed Mean",
-      breaks = sort(unique(c(pretty(range(plot.data$value)), stats$mean))),
-      labels = custom_left_labels,
-      sec.axis = sec_axis(~., name = "Median", breaks = stats$median, labels = custom_right_labels)
+      name = "Signed Sqrt Transformed Relative Enrichment",
+      breaks = sort(unique(c(pretty(range(plot.data$value)), stats$median))),
+      labels = custom_left_labels
+      #labels = custom_left_labels,
+      #sec.axis = sec_axis(~., name = "Median", breaks = stats$median, labels = custom_right_labels)
     ) +
     theme_minimal() +
     theme(
@@ -206,22 +218,32 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       x = x_label,
       y = NULL,
       #caption = paste("Values capped at the 99.9th percentile (", round(cap_threshold, 2), ").", sep = "", "\nDashed lines represent the mean signal; solid lines show the median.")
-      caption = paste("Dashed lines represent the mean signal; solid lines show the median.")
+      caption = paste("Dashed lines represent the median signal.")
     ) +
     
     # Add dashed lines for the mean
-    geom_hline(data = stats, aes(yintercept = mean, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5) +
-    geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "solid", linewidth = 0.5, alpha = 0.5) +
-    coord_cartesian(ylim = c(0, cap_threshold)) +
-    geom_point(
-      data = stats,
-      aes(x = group, y = max(cap_threshold) * 1, size = count, color = group),
-      shape = 21, fill = "white", stroke = 1.5, alpha = 0.9
-    ) +
+    #geom_hline(data = stats, aes(yintercept = mean, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5) +
+  #  geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5, xintercept = c(1, 2)) +
+   # geom_segment(data = stats, aes(x = as.numeric(group) - 0.3, xend = as.numeric(group) + 0.3, y = median, yend = median, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
+   # geom_segment(data = stats, aes(x = as.numeric(factor(group)) - 0.3, xend = as.numeric(factor(group)) + 0.3, y = median, yend = median, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
+    geom_segment(data = stats, aes(x = as.numeric(factor(group, levels = c('Positives', 'Negatives', 'Targets'))) - 0.5, xend = as.numeric(factor(group, levels = c('Positives', 'Negatives', 'Targets'))) + 0.5, y = mean, yend = mean, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
+    
+    coord_cartesian(ylim = c(0, cap_threshold*1.1)) +
+    
+    #    geom_point(
+#      data = stats,
+#      aes(x = group, y = max(cap_threshold) * 1.1, size = count, color = group),
+#      shape = 21, fill = "white", stroke = 1.5, alpha = 0.9
+#    ) +
+#    geom_text(
+#      data = stats,
+#      aes(x = group, y = max(cap_threshold) * 1.1, label = scales::comma(count)),
+#      size = 2.5, fontface = "bold", color = "black"
+#    ) +
     geom_text(
       data = stats,
-      aes(x = group, y = max(cap_threshold) * 1, label = scales::comma(count)),
-      size = 2.5, fontface = "bold", color = "black"
+      aes(x = group, y = min(plot.data$value) - 0.05 * (max(plot.data$value) - min(plot.data$value)), label = paste0("n=", scales::comma(count))),
+      size = 3.5, fontface = "bold", color = "black"
     ) +
     scale_size(range = c(6, 12), guide = "none") +
     scale_color_manual(values = group_colors)
@@ -232,14 +254,14 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
 # plot
 out_peaks_name <- paste("outfile_peaks",suffix,".pdf",sep="")
 out_peaks <- paste(outdir,out_peaks_name,sep="/")
-out_title_peaks <- paste("ChiP Signal Distribution Across Genome Peaks",suffix,sep=" ")
+out_title_peaks <- paste("ChIP Signal Distribution Across Genome Peaks",suffix,sep=" ")
 g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, out_title_peaks, "Genome Regions"), nrow=1, ncol=1)
 ggsave(out_peaks, g_peaks, width = 35, height = 20, units = "cm")
 dev.off()
 
 out_win_name <- paste("outfile_win",suffix,".pdf",sep="")
 out_win <- paste(outdir,out_win_name,sep="/")
-out_title_win <- paste("ChiP Signal Distribution Across Genome Bins",suffix,sep=" ")
+out_title_win <- paste("ChIP Signal Distribution Across Genome Bins",suffix,sep=" ")
 g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, out_title_win, "Genome Bins"), nrow=1, ncol=1)
 ggsave(out_win, g_win, width = 35, height = 20, units = "cm")
 dev.off()
