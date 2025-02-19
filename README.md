@@ -32,7 +32,7 @@
   <p align="center">
     <h3 align="center">This tool is designed to evaluate ChIP signal over a viral genome by comparison with the host ChIP signal.</h3>
     <br />
-    <a href="https://github.com/VirusGenomics/ViPeaQ"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/VirusGenomics/ViPeaQ"><strong>Explore the docs »</strong><img src="images/ViPeaQ_logo_small.png"></a>
     <br />
     <br />
     <a href="https://github.com/VirusGenomics/ViPeaQ/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
