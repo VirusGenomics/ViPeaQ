@@ -232,7 +232,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     
     geom_text(
       data = stats,
-      aes(x = group, y = min(plot.data$value) - 0.05 * (max(plot.data$value) - min(plot.data$value)), label = paste0("n=", scales::comma(count))),
+      aes(x = group, y = min(plot.data$value) - 0.02 * (max(plot.data$value) - min(plot.data$value)), label = paste0("n=", scales::comma(count))),
       size = 3.5, fontface = "bold", color = "black"
     ) +
     scale_size(range = c(6, 12), guide = "none")  
