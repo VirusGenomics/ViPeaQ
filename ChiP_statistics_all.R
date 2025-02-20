@@ -160,18 +160,34 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     pull(max_threshold)
   
   # Define custom labels for the left and right axes
+  # custom_left_labels <- function(y) {
+  #   sapply(y, function(value) {
+  #     if (value %in% pretty(range(plot.data$value))) {
+  #       as.character(value)
+  #     } else if (value %in% stats$median) {
+  #       group <- stats$group[which(stats$median == value)]
+  #       return(paste0("<b><span style='color:", group_colors[group], "; font-size:15px;'>", round(value, 2), "</span></b>"))
+  #     } else {
+  #       ""
+  #     }
+  #   })
+  # }
+  
   custom_left_labels <- function(y) {
     sapply(y, function(value) {
-      if (value %in% pretty(range(plot.data$value))) {
-        as.character(value)
+      if (is.na(value)) {  
+        return("")  # Skip NA values to prevent errors
+      } else if (value %in% pretty(range(plot.data$value, na.rm = TRUE))) {  
+        return(as.character(value))  # Regular tick marks and ylimit
       } else if (value %in% stats$median) {
         group <- stats$group[which(stats$median == value)]
-        paste0("<span style='color:", group_colors[group], "; font-size:12px;'>", round(value, 2), "</span>")
+        return(paste0("<b><span style='color:", group_colors[group], "; font-size:15px;'>", round(value, 2), "</span></b>"))
       } else {
-        ""
+        return("")  # Hide everything else
       }
     })
   }
+  
   
   # Define group colors
   group_colors <- c("Positives" = "orange", "Negatives" = "grey", "Targets" = "red")
@@ -209,21 +225,22 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       caption = paste("Dashed lines represent the median signal.")
     ) +
     
+    geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.7) +
     # Add horizontal dashed median lines across all violin plots
-    geom_segment(
-      data = expanded_stats, 
-      aes(
-        x = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) - 0.3,  
-        xend = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) + 0.3,  
-        y = median,        
-        yend = median, 
-        color = group
-      ), 
-      inherit.aes = FALSE,  
-      linetype = "dashed", 
-      size = 1, 
-      alpha = 0.8
-    ) +
+    # geom_segment(
+    #   data = expanded_stats, 
+    #   aes(
+    #     x = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) - 0.3,  
+    #     xend = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) + 0.3,  
+    #     y = median,        
+    #     yend = median, 
+    #     color = group
+    #   ), 
+    #   inherit.aes = FALSE,  
+    #   linetype = "dashed", 
+    #   size = 1, 
+    #   alpha = 0.8
+    # ) +
     
     # Ensure correct color mapping for dashed lines
     scale_color_manual(values = group_colors) + 
@@ -232,7 +249,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     
     geom_text(
       data = stats,
-      aes(x = group, y = min(plot.data$value) - 0.02 * (max(plot.data$value) - min(plot.data$value)), label = paste0("n=", scales::comma(count))),
+      aes(x = group, y = min(plot.data$value) - 0.5, label = paste0("n=", scales::comma(count))),
       size = 3.5, fontface = "bold", color = "black"
     ) +
     scale_size(range = c(6, 12), guide = "none")  
@@ -245,16 +262,15 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
 out_peaks_name <- paste("outfile_peaks",suffix,".pdf",sep="")
 out_peaks <- paste(outdir,out_peaks_name,sep="/")
 out_title_peaks <- paste("ChIP Signal Distribution Across Genome Peaks",suffix,sep=" ")
-g_peaks <- grid.arrange(create_chip_signal_plot(plot.data_peaks, out_title_peaks, "Genome Regions"), nrow=1, ncol=1)
-ggsave(out_peaks, g_peaks, width = 35, height = 20, units = "cm")
-dev.off()
+g_peaks <- create_chip_signal_plot(plot.data_peaks, out_title_peaks, "Genome Regions")
+ggsave(filename = out_peaks, plot = g_peaks, width = 35, height = 20, units = "cm")
 
 out_win_name <- paste("outfile_win",suffix,".pdf",sep="")
 out_win <- paste(outdir,out_win_name,sep="/")
 out_title_win <- paste("ChIP Signal Distribution Across Genome Bins",suffix,sep=" ")
-g_win <- grid.arrange(create_chip_signal_plot(plot.data_win, out_title_win, "Genome Bins"), nrow=1, ncol=1)
-ggsave(out_win, g_win, width = 35, height = 20, units = "cm")
-dev.off()
+g_win <- create_chip_signal_plot(plot.data_win, out_title_win, "Genome Bins")
+ggsave(filename = out_win, plot = g_win, width = 35, height = 20, units = "cm")
+
 
 out_data_peaks_name <- paste("outfile_peaks",suffix,".tsv",sep="")
 out_data_peaks <- paste(outdir,out_data_peaks_name,sep="/")
