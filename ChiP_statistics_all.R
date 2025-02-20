@@ -128,6 +128,7 @@ stat_box_data_win <- function(y, upper_limit = max(plot.data_win$value) * 1.3) {
   )
 }
 
+
 ############
 ##  PLOT  ##
 ############
@@ -146,16 +147,16 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     ) %>%
     ungroup()
   
+  # Expand stats so each median appears for every category
+  expanded_stats <- stats %>%
+    crossing(group_plot = c("Positives", "Negatives", "Targets"))  # Ensure all medians appear on all violins
+  
   # Calculate the 99.9th percentile threshold for each group and select the maximum
   cap_threshold <- plot.data %>%
     group_by(group) %>%
     summarise(threshold = quantile(value, 0.999)) %>%
     summarise(max_threshold = max(threshold)) %>%
     pull(max_threshold)
-  
-  # Cap values exceeding the threshold
-  # plot.data <- plot.data %>%
-  #   mutate(value = ifelse(value > cap_threshold, cap_threshold, value))
   
   # Define custom labels for the left and right axes
   custom_left_labels <- function(y) {
@@ -171,22 +172,11 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     })
   }
   
-#  custom_right_labels <- function(y) {
-#    sapply(y, function(value) {
-#      if (value %in% stats$median) {
-#        group <- stats$group[which(stats$median == value)]
-#        paste0("<span style='color:", group_colors[group], "; font-size:12px;'>", round(value, 2), "</span>")
-#      } else {
-#        ""
-#      }
-#    })
-#  }
-  
   # Define group colors
   group_colors <- c("Positives" = "orange", "Negatives" = "grey", "Targets" = "red")
   
   # Generate the plot
-  plot_peaks <- ggplot(plot.data, aes(x = group, y = value, fill = group)) + 
+  plot_peaks <- ggplot(plot.data, aes(x = factor(group, levels = c("Positives", "Negatives", "Targets")), y = value, fill = group)) + 
     geom_violin(trim = TRUE, alpha = 0.6) + 
     scale_fill_manual(values = group_colors) +
     scale_x_discrete(limits = c("Positives", "Negatives", "Targets"),
@@ -195,8 +185,6 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       name = "Signed Sqrt Transformed Relative Enrichment",
       breaks = sort(unique(c(pretty(range(plot.data$value)), stats$median))),
       labels = custom_left_labels
-      #labels = custom_left_labels,
-      #sec.axis = sec_axis(~., name = "Median", breaks = stats$median, labels = custom_right_labels)
     ) +
     theme_minimal() +
     theme(
@@ -217,39 +205,40 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       title = plot_title,
       x = x_label,
       y = NULL,
-      #caption = paste("Values capped at the 99.9th percentile (", round(cap_threshold, 2), ").", sep = "", "\nDashed lines represent the mean signal; solid lines show the median.")
       caption = paste("Dashed lines represent the median signal.")
     ) +
     
-    # Add dashed lines for the mean
-    #geom_hline(data = stats, aes(yintercept = mean, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5) +
-  #  geom_hline(data = stats, aes(yintercept = median, color = group), linetype = "dashed", linewidth = 0.5, alpha = 0.5, xintercept = c(1, 2)) +
-   # geom_segment(data = stats, aes(x = as.numeric(group) - 0.3, xend = as.numeric(group) + 0.3, y = median, yend = median, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
-   # geom_segment(data = stats, aes(x = as.numeric(factor(group)) - 0.3, xend = as.numeric(factor(group)) + 0.3, y = median, yend = median, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
-    geom_segment(data = stats, aes(x = as.numeric(factor(group, levels = c('Positives', 'Negatives', 'Targets'))) - 0.5, xend = as.numeric(factor(group, levels = c('Positives', 'Negatives', 'Targets'))) + 0.5, y = mean, yend = mean, color = group), linetype = "dashed", size = 0.8, alpha = 0.5) +
+    # Add horizontal dashed median lines across all violin plots
+    geom_segment(
+      data = expanded_stats, 
+      aes(
+        x = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) - 0.3,  
+        xend = as.numeric(factor(group_plot, levels = c("Positives", "Negatives", "Targets"))) + 0.3,  
+        y = median,        
+        yend = median, 
+        color = group
+      ), 
+      inherit.aes = FALSE,  
+      linetype = "dashed", 
+      size = 1, 
+      alpha = 0.8
+    ) +
     
-    coord_cartesian(ylim = c(0, cap_threshold*1.1)) +
+    # Ensure correct color mapping for dashed lines
+    scale_color_manual(values = group_colors) + 
     
-    #    geom_point(
-#      data = stats,
-#      aes(x = group, y = max(cap_threshold) * 1.1, size = count, color = group),
-#      shape = 21, fill = "white", stroke = 1.5, alpha = 0.9
-#    ) +
-#    geom_text(
-#      data = stats,
-#      aes(x = group, y = max(cap_threshold) * 1.1, label = scales::comma(count)),
-#      size = 2.5, fontface = "bold", color = "black"
-#    ) +
+    coord_cartesian(ylim = c(0, cap_threshold * 1.1)) + 
+    
     geom_text(
       data = stats,
       aes(x = group, y = min(plot.data$value) - 0.05 * (max(plot.data$value) - min(plot.data$value)), label = paste0("n=", scales::comma(count))),
       size = 3.5, fontface = "bold", color = "black"
     ) +
-    scale_size(range = c(6, 12), guide = "none") +
-    scale_color_manual(values = group_colors)
+    scale_size(range = c(6, 12), guide = "none")  
   
   return(plot_peaks)
 }
+
 
 # plot
 out_peaks_name <- paste("outfile_peaks",suffix,".pdf",sep="")
