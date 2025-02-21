@@ -499,13 +499,24 @@ median_fpk_virus_chip=$(cut -f 10 ${outdir}/${genome_name}_win_count.tsv | sort 
 ## Add an extra step that remove chipseq peaks falling in blacklisted region of the genome (at least 10% of the peaks length)
 echo -e "Checking for potential input host peaks in blacklisted region...";
 
-bedtools intersect -v -a ${p} -b ${out_genome}/blacklisted.bed -wa > ${outdir}/peaks_blacklist_exc.bed
+bedtools intersect -v -a ${p} -b ${out_genome}/blacklisted.bed -wa > ${outdir}/peaks_blacklist_exc_tmp.bed
 
 bedtools intersect -a ${p} -b ${out_genome}/blacklisted.bed -wa -u > ${outdir}/peaks_excluded.bed
 
+if [ "$naming_convention" == "chr-prefixed" ]
+then
+	grep -E '^chr([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
+	grep -Ev '^chr([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
+else
+	grep -E '^([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
+	grep -Ev '^([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
+fi
+
+rm -f ${outdir}/peaks_blacklist_exc_tmp.bed
+
 excluded_peaks=$(wc -l ${outdir}/peaks_excluded.bed | cut -f 1 -d ' ')
 
-echo -e "${excluded_peaks} overlapping with blacklisted regions of the genome; the peaks excluded can be retrieved in the file peaks_excluded.bed";
+echo -e "${excluded_peaks} overlapping with blacklisted regions of the genome or present in non-canonical chromosomes; the peaks excluded can be retrieved in the file peaks_excluded.bed";
 
 echo -e " ";
 

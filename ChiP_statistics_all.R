@@ -197,11 +197,16 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     geom_violin(trim = TRUE, alpha = 0.6) + 
     scale_fill_manual(values = group_colors) +
     scale_x_discrete(limits = c("Positives", "Negatives", "Targets"),
-                     labels = c("Positives" = "Positives", "Negatives" = "Background", "Targets" = "Targets")) +
+                     labels = c(
+                       "Positives" = paste0("Positives<br><b>n=", scales::comma(stats$count[stats$group == "Positives"]), "</b>"),
+                       "Negatives" = paste0("Background<br><b>n=", scales::comma(stats$count[stats$group == "Negatives"]), "</b>"),
+                       "Targets" = paste0("Targets<br><b>n=", scales::comma(stats$count[stats$group == "Targets"]), "</b>")
+                     )) +
     scale_y_continuous(
       name = "Signed Sqrt Transformed Relative Enrichment",
-      breaks = sort(unique(c(pretty(range(plot.data$value)), stats$median))),
-      labels = custom_left_labels
+      breaks = sort(unique(c(0, pretty(range(plot.data$value)), stats$median))),
+      labels = custom_left_labels,
+      expand = c(0, 0)
     ) +
     theme_minimal() +
     theme(
@@ -210,13 +215,18 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       axis.title.y.right = element_text(size = 16, face = "bold"),
       axis.text.y.left = element_markdown(size = 12),
       axis.text.y.right = element_markdown(size = 12),
-      axis.text.x = element_text(size = 12),
+      axis.text.x = element_markdown(size = 12),
       legend.position = "none",
       plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
       plot.caption = element_text(size = 10, hjust = 0),
       panel.grid.major.y = element_blank(),
       panel.grid.minor.y = element_blank(),
-      panel.grid.major.x = element_blank()
+      panel.grid.major.x = element_blank(),
+      # 🔹 Ensure Axes Are Visible 🔹
+      axis.line.x = element_line(color = "black", size = 0.4),  # X-axis line
+      axis.line.y = element_line(color = "black", size = 0.4),  # Y-axis line
+      axis.ticks.x = element_line(color = "black", size = 0.4),  # X-axis ticks
+      axis.ticks.y = element_line(color = "black", size = 0.4)   # Y-axis ticks
     ) +
     labs(
       title = plot_title,
@@ -247,11 +257,11 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     
     coord_cartesian(ylim = c(0, cap_threshold * 1.1)) + 
     
-    geom_text(
-      data = stats,
-      aes(x = group, y = min(plot.data$value) - 0.5, label = paste0("n=", scales::comma(count))),
-      size = 3.5, fontface = "bold", color = "black"
-    ) +
+    # geom_text(
+    #   data = stats,
+    #   aes(x = group, y = min(plot.data$value) - 0.5, label = paste0("n=", scales::comma(count))),
+    #   size = 3.5, fontface = "bold", color = "black"
+    # ) +
     scale_size(range = c(6, 12), guide = "none")  
   
   return(plot_peaks)
