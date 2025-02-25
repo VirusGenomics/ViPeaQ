@@ -505,11 +505,11 @@ bedtools intersect -a ${p} -b ${out_genome}/blacklisted.bed -wa -u > ${outdir}/p
 
 if [ "$naming_convention" == "chr-prefixed" ]
 then
-	grep -E '^chr([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
-	grep -Ev '^chr([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
+	awk '/^chr([0-9]+|X|Y)\b/' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
+	awk '!/^chr([0-9]+|X|Y)\b/' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
 else
-	grep -E '^([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
-	grep -Ev '^([0-9]+|X|Y)\b' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
+	awk '/^([0-9]+|X|Y)\b/' ${outdir}/peaks_blacklist_exc_tmp.bed > ${outdir}/peaks_blacklist_exc.bed
+	awk '!/^([0-9]+|X|Y)\b/' ${outdir}/peaks_blacklist_exc_tmp.bed >> ${outdir}/peaks_excluded.bed
 fi
 
 rm -f ${outdir}/peaks_blacklist_exc_tmp.bed
