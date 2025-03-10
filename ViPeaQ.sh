@@ -336,8 +336,12 @@ while [[ $PARSED_ARGUMENTS =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
     PARSED_ARGUMENTS="${PARSED_ARGUMENTS#*"${BASH_REMATCH[0]}"}"
 done
 
-# echo "toto";
-# exit
+RSCRIPT=$(which Rscript 2>/dev/null)
+
+if [[ -z "$RSCRIPT" ]]; then
+    echo "Error: Rscript not found in PATH" >&2
+    exit 1
+fi
 
 #####################
 ##    DOWNLOAD     ##
@@ -373,10 +377,10 @@ name=$(basename "${p%.*}");
 ext="${p#*.}"
 if [ "$ext" == "txt" ]	## epic2
 then
-	${BASEDIR}/plot_epic2_qc.r -i ${p} -s ${name} -o ${outdir}
+	${RSCRIPT} ${BASEDIR}/plot_epic2_qc.r -i ${p} -s ${name} -o ${outdir}
 elif [ "$ext" == "narrowPeak" ]	## macs2
 then
-	${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
+	${RSCRIPT} ${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
 	sed $'1i #chr\tstart\tend\tname\tscore\tstrand\tsignal\tpvalue\tqvalue\tpeak' ${p} > ${outdir}/macs2_peaks.bed
 	p="${outdir}/macs2_peaks.bed"
 else
@@ -613,7 +617,7 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 
 	echo -e " ";
 
-	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} "genome_FPK${s}.pdf"
+	${RSCRIPT} ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} "genome_FPK${s}.pdf"
 
 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
 	cut -f 2- ${outdir}/genome_win_count_lambda_corrected.tsv | sed '1d' > ${outdir}/genome_win_count_lambda_corrected.bed
@@ -646,7 +650,7 @@ else
 
 	cut -f 2- ${outdir}/${genome_name}_win_count.tsv > "${outdir}/filtered_${genome_name}_win_count${s}.tsv"
 	
-	Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} "genome_FPK${s}.pdf"
+	${RSCRIPT} ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_header.tsv 0 ${outdir} "genome_FPK${s}.pdf"
 	
 	cut -f 2- ${outdir}/host_peaks_count.tsv > ${outdir}/host_peaks_count.bed
 	cut -f 2- ${outdir}/genome_win_count.tsv > ${outdir}/genome_win_count.bed
@@ -904,7 +908,7 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv"
 	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv"
 
-	Rscript ${BASEDIR}/ChiP_statistics_all.R \
+	${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
 	"${outdir}/top_positives_peaks${s}.tsv" \
 	"${outdir}/top_negatives_peaks${s}.tsv" \
 	"${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
@@ -925,7 +929,7 @@ else
 	## 2) negatives_win_count.tsv
 	## 3) filtered_${genome_name}_win_count.tsv --> for now it is unfiltered on FPK value input
 
-	Rscript ${BASEDIR}/ChiP_statistics_all.R \
+	${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
 	"${outdir}/top_positives_peaks${s}.tsv" \
 	"${outdir}/top_negatives_peaks${s}.tsv" \
 	"${outdir}/filtered_${genome_name}_win_count${s}.tsv" \

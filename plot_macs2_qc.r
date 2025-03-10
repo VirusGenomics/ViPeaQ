@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 # Suppress warnings globally
 options(warn = -1)
 

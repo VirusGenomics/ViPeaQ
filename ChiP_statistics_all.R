@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 # Suppress warnings globally
 options(warn = -1)
 
@@ -18,15 +16,6 @@ suppressMessages(library(tidyr))
 if (length(args)<8) {
   stop("At least 8 arguments must be supplied", call.=FALSE)
 }
-
-# args[1] <- "/home/robitaillea/test_thomas/test2/top_positives_peaks_cyc_h3k27me3vsH3.tsv"
-# args[2] <- "/home/robitaillea/test_thomas/test2/top_negatives_peaks_cyc_h3k27me3vsH3.tsv"
-# args[3] <- "/home/robitaillea/test_thomas/test2/HQ404500_win_count_lambda_corrected_cyc_h3k27me3vsH3.tsv"
-# args[4] <- "/home/robitaillea/test_thomas/test2/positives_win_count_lambda_corrected_filtered_cyc_h3k27me3vsH3.tsv"
-# args[5] <- "/home/robitaillea/test_thomas/test2/negatives_win_count_lambda_corrected_filtered_cyc_h3k27me3vsH3.tsv"
-# args[6] <- "/home/robitaillea/test_thomas"
-# args[7] <- "1"
-# args[8] <- "_cyc_h3k27me3vsH3"
 
 pos_peaks <- read.table(args[1], header=F, sep="\t", quote="\"")
 

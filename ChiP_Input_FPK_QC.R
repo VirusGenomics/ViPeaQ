@@ -1,4 +1,3 @@
-#!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
 # Suppress warnings globally
@@ -9,19 +8,11 @@ options(warn = -1)
 suppressMessages(library(dplyr))
 suppressMessages(library(ggplot2))
 
-# Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count_lambda_corrected.tsv 1 ${outdir} genome_FPK.pdf
-# Rscript ${BASEDIR}/ChiP_Input_FPK_QC.R ${outdir}/genome_win_count.tsv 0 ${outdir} genome_FPK.pdf
-
 ######## Load data ########
 # test if there is at least five argument: if not, return an error
 if (length(args)<4) {
   stop("At least four arguments must be supplied", call.=FALSE)
 }
-
-# data <- read.table("/home/robitaillea/test2/out/genome_win_count.tsv", header=T, sep="\t", quote="\"")
-# lambda <- 0
-# outdir <- "/mnt/R7525/robitaillea/test/out"
-# outfile <- "genome_FPK.pdf"
 
 data <- read.table(args[1], header=T, sep="\t", quote="\"")
 lambda <- args[2]
@@ -38,9 +29,6 @@ fpk_min10 <- fpk[fpk >= 10]
 q <- quantile(fpk_min10, prob=c(.1,.5,.9), type=1)
 
 fpk_min10_q <- fpk_min10[fpk_min10 > q[[1]] & fpk_min10 < q[[3]]]
-# q[[1]]
-# q[[2]]
-# q[[3]]
 
 data_plot <- data.frame(group = "FPK", value = fpk)
 data_cov10_plot <- data.frame(group = "FPK_mincov10", value = fpk_min10)

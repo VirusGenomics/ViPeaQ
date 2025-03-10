@@ -1,5 +1,3 @@
-#!/usr/bin/env Rscript
-
 # Suppress warnings globally
 options(warn = -1)
 
@@ -40,9 +38,6 @@ if (is.null(opt$sample_ids)){
 if (file.exists(opt$outdir) == FALSE) {
   dir.create(opt$outdir,recursive=TRUE)
 }
-
-# PeakFiles <- unlist(strsplit("/mnt/R7525/robitaillea/normalization_scripts/20221130_hap1_prc1_prc2_ko2_chip/epic2_w200_hap1_wt_parental_h3k9me3.txt",","))
-# SampleIDs <- unlist(strsplit("hap1_wt_parental_h3k9me3_w200",","))
 
 PeakFiles <- unlist(strsplit(opt$peak_files,","))
 SampleIDs <- unlist(strsplit(opt$sample_ids,","))
