@@ -401,7 +401,8 @@ cd ${dir}
 if [[ "$ws" < 1 ]]
 then
 	#~ shift_size=$($w*$ws);
-	shift_size=$(printf '%.*f\n' 0 $(bc <<< "$w * $ws"));
+	# shift_size=$(printf '%.*f\n' 0 $(bc <<< "$w * $ws"));
+	shift_size=$(awk "BEGIN {print int($w * $ws)}")
 else
 	shift_size=$ws;
 fi
@@ -609,8 +610,11 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 
 	median_fpk_virus_input_lambda=$(cut -f 12 "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" | sort -n | awk 'NF {a[NR] = $1} END {print (NR % 2 ? a[(NR + 1) / 2] : (a[NR / 2] + a[NR / 2 + 1]) / 2)}')
 
-	rounded_median_fpk_host_input_lambda=$(printf "%.3f" "$median_fpk_host_input_lambda")
-	rounded_median_fpk_virus_input_lambda=$(printf "%.3f" "$median_fpk_virus_input_lambda")
+	# rounded_median_fpk_host_input_lambda=$(printf "%.3f" "$median_fpk_host_input_lambda")
+	rounded_median_fpk_host_input_lambda=$(awk "BEGIN {printf \"%.3f\", $median_fpk_host_input_lambda}")
+
+	# rounded_median_fpk_virus_input_lambda=$(printf "%.3f" "$median_fpk_virus_input_lambda")
+	rounded_median_fpk_virus_input_lambda=$(awk "BEGIN {printf \"%.3f\", $median_fpk_virus_input_lambda}")
 
 	echo "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the host is ${rounded_median_fpk_host_input_lambda} (previous value ${median_fpk_host_input}).";
 	echo "The newly calculated median Fragment Per Kilobase (FPK) of the input bam file from the target is ${rounded_median_fpk_virus_input_lambda} (previous value ${median_fpk_virus_input}).";
