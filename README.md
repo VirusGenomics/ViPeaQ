@@ -130,11 +130,14 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 
 ### R Packages
 
+- [optparse](https://cran.r-project.org/web/packages/optparse/index.html)
+- [reshape2](https://cran.r-project.org/web/packages/reshape2/index.html)
+- [scales](https://cran.r-project.org/web/packages/scales/index.html)
 - [dplyr](https://cran.r-project.org/web/packages/dplyr/index.html)
 - [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
 - [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html)
 - [ggtext](https://cran.r-project.org/web/packages/ggtext/index.html)
-- [tidyr[1]](https://cran.r-project.org/web/packages/tidyr/index.html)
+- [tidyr](https://cran.r-project.org/web/packages/tidyr/index.html)
 
 ### Installation
 
