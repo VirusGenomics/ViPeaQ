@@ -1,0 +1,22 @@
+name: vipeaq
+channels:
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
+  - bioconda
+dependencies:
+  - r-base==4.3.1
+  - r-optparse==1.7.3
+  - r-ggplot2==3.4.4
+  - r-reshape2==1.4.4
+  - bioconda::bedtools
+  - conda-forge::openssl
+  - zegami::libssl-libcryptso6
+  - bioconda::samtools
+  - bioconda::sambamba==1.0
+  - bioconda::subread
+  - bioconda::perl-statistics-basic
+  - conda-forge::r-dplyr
+  - conda-forge::r-ggtext
+  - bioconda::perl-list-moreutils
+  - conda-forge::r-tidyr

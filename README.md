@@ -145,6 +145,13 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 git clone https://github.com/VirusGenomics/ViPeaQ.git
 ```
 
+### Conda environment
+
+```sh
+conda env create -f vipeaq_env.yml
+conda activate vipeaq
+```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
