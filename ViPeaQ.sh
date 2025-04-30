@@ -127,7 +127,7 @@ Optional:
 	-n	Number of selected positive sites - default: 200
 	-w	shifting window size of ratio (ChiP/input) calculation - default: 1000
 	-ws	Shifting size - fraction of window size (w option) - float up to 1 is allowed - default: 0.5
-	-e	exclusion region file bed format (chr	start	end) - Not Implemented
+	-e	exclusion list for background regions selection - bed format (chr	start	end)
 	-t	threads number - default: 2 
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
@@ -259,6 +259,8 @@ nonoverlap_step_int=$(echo "$nonoverlap_step / 1" | bc)  # Truncate to an intege
 if [ -z "$e" ]
 then
 	e=""
+else
+	e=$(to_absolute_path "$e")
 fi
 
 if [ -z "$t" ]
@@ -633,7 +635,14 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	
 	# Only report those entries in A that have _no overlaps_ with B
 	bedtools intersect -v -a ${outdir}/genome_win_count_lambda_corrected.bed -b ${outdir}/host_peaks_count.bed > "${outdir}/negatives_win_count_lambda_corrected.tsv"
-	
+
+	## Here filter out all the regions in the exclusion list
+	if [ -n "$e" ]
+	then
+		bedtools intersect -v -a ${outdir}/negatives_win_count_lambda_corrected.tsv -b ${e} > ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv
+		mv ${outdir}/negatives_win_count_lambda_corrected_filtered.tsv ${outdir}/negatives_win_count_lambda_corrected.tsv
+	fi
+
 	temp_file=$(mktemp)
 	cut -f 2- "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" | sed '1d' > "${temp_file}"
  	mv "$temp_file" "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv"
@@ -665,6 +674,13 @@ else
 	cut -f 10,11,12,13,14,15,16,17,18 ${outdir}/intersect_peaks.bed > "${outdir}/positives_win_count.tsv"
 
 	bedtools intersect -v -a ${outdir}/genome_win_count.bed -b ${outdir}/host_peaks_count.bed > "${outdir}/negatives_win_count.tsv"
+
+	## Here filter out all the regions in the exclusion list
+	if [ -n "$e" ]
+	then
+		bedtools intersect -v -a ${outdir}/negatives_win_count.tsv -b ${e} > ${outdir}/negatives_win_count_filtered.tsv
+		mv ${outdir}/negatives_win_count_filtered.tsv ${outdir}/negatives_win_count.tsv
+	fi
 	
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
@@ -737,8 +753,7 @@ rm "$sorted_counts" "$sorted_peaks"
 
 
 ######################################################
-##	No filter on fpk input of the peaks (for now)	##
-######################################################
+##	Filter on fpk input of the peaks based on percentile FPK calculated from the input distribution
 lambda_peak=0
 
 if (( $(echo "$lambda_peak > 0" |bc -l) )); then
@@ -757,8 +772,8 @@ fi
 ##	Here threshold FPK must be:
 ##	calculate the fraction of bins over the all genome that have a FPK value in the input = 0 --> flag if high
 ##	calculate the median FPK value of the bin inc. the ones equal to 0, and excluding the one equal to 0
-##	From the distribution of the FPK value in the input when excluding the one equal to 0, calculate the threshold values as eg. the lowest and highest 10th percentile
-##	Exclude all positives peaks that have a median FPK value below or above the lowest and highest 10h percentile thershold
+##	From the distribution of the FPK value in the input when excluding the ones equal to 0, calculate the threshold values as eg. the lowest and highest xth percentile
+##	Exclude all positives peaks that have a median FPK value below or above the lowest and highest xth percentile thershold
 ##	Take the top n peaks based on the eg. score (user-defined)
 ##	report the median FPK value of the top n peaks and compare it to the median FPK value of all the bins in the genome (excluding the one equal to 0)
 ##
@@ -846,11 +861,18 @@ available_size=$(($genome_size-$exclusion_size))
 i=0;
 fpk_column=9
 
+## Create a copy of exclusion_file.bed in which we add the peak from ${e} if it is not empty
+if [ -n "$e" ]
+then
+	cp ${out_genome}/exclusion_file.bed ${out_genome}/exclusion_file_neg.bed
+	cat ${e} >> ${out_genome}/exclusion_file_neg.bed
+fi
+
 while (( $i < $negatives_regions )); do
-	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
-	
+	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file_neg.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
+
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${outdir}/negatives_peaks.bed
-	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file.bed
+	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file_neg.bed
 
 	awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/negatives_peaks_tmp.bed > ${outdir}/negatives_peaks.saf
 
@@ -958,7 +980,7 @@ rm -f ${out_genome}/blacklisted.bed
 rm -f ${out_genome}/genome_win.saf
 rm -f ${out_genome}/genome_win_count.tsv
 rm -f ${outdir}/genome_win_count.tsv.summary
-rm -f ${out_genome}/${genome_name}.chrom.sizes
+# rm -f ${out_genome}/${genome_name}.chrom.sizes
 rm -f ${out_genome}/${genome_name}_win.saf
 rm -f ${outdir}/${genome_name}_win_count.tsv
 rm -f ${outdir}/${genome_name}_win_count.tsv.summary
@@ -978,6 +1000,7 @@ rm -f ${outdir}/genome_win_count.tsv
 rm -f ${outdir}/host_peaks_count_filtered.tsv
 rm -f ${outdir}/host_peaks_count_filtered_sorted.tsv
 rm -f ${out_genome}/exclusion_file.bed
+rm -f ${out_genome}/exclusion_file_neg.bed
 rm -f ${outdir}/negatives_peaks_tmp.bed
 rm -f ${outdir}/negatives_peaks.bed
 rm -f ${outdir}/negatives_peaks.saf
@@ -989,5 +1012,6 @@ rm -f ${outdir}/negatives_win_count.tsv
 rm -f ${outdir}/top_positives_peaks.bed
 rm -f ${outdir}/macs2_peakqc.summary.txt
 rm -f ${outdir}/macs2_peakqc.plots.pdf
+
 
 exit 0
