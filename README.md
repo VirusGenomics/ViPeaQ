@@ -117,6 +117,7 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 - [featureCounts](https://subread.sourceforge.net/featureCounts.html)
 - [sambamba](https://lomereiter.github.io/sambamba/)
 - [Samtools](https://www.htslib.org/)
+- [deepTools](https://deeptools.readthedocs.io/en/develop/index.html)
 
 ### Perl Modules
 
@@ -138,6 +139,9 @@ We developed a statistical model for viral peak quantification (ViPeaQ), which c
 - [gridExtra](https://cran.r-project.org/web/packages/gridExtra/index.html)
 - [ggtext](https://cran.r-project.org/web/packages/ggtext/index.html)
 - [tidyr](https://cran.r-project.org/web/packages/tidyr/index.html)
+- [rtracklayer](https://bioconductor.org/packages/release/bioc/html/rtracklayer.html)
+- [GenomicRanges](https://bioconductor.org/packages/release/bioc/html/GenomicRanges.html)
+- [ggbio](https://www.bioconductor.org/packages/release/bioc/html/ggbio.html)
 
 ### Installation
 
@@ -181,6 +185,7 @@ Optional:
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
 	-s	Suffix for output files
+  -a	gff annotation file of target genome (NCBI)
 
 	-h  show this help text"
 ```
@@ -214,6 +219,7 @@ Optional:
 | -c    | 10 | Expected average FPK in the host input BAM file. If below this thershold the lambda correction approach is applied  |
 | -x    | 10 | Percentile threshold for filtering the host input FPK distribution by defining two cutoff limits: a lower limit at the xth percentile and an upper limit at the (100 - x)th percentile, aimed at excluding potential technical artifacts  |
 | -s    | NA | Character string used for several output suffix naming |
+| -a    | NA | GFF file of the target genome used for annotation tracks |
 
   * #### Flags
 

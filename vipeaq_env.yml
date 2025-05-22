@@ -15,8 +15,12 @@ dependencies:
   - bioconda::samtools
   - bioconda::sambamba==1.0
   - bioconda::subread
+  - bioconda::deeptools
   - bioconda::perl-statistics-basic
   - conda-forge::r-dplyr
   - conda-forge::r-ggtext
   - bioconda::perl-list-moreutils
   - conda-forge::r-tidyr
+  - bioconda::bioconductor-rtracklayer
+  - bioconda::bioconductor-genomicranges
+  - bioconda::bioconductor-ggbio

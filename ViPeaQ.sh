@@ -132,6 +132,7 @@ Optional:
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
 	-s	Suffix for output files
+	-a	gff annotation file of target genome (NCBI)
 
 	-h  show this help text"
 		
@@ -162,7 +163,7 @@ error(){
     exit 1;
 }
 
-PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x:,s: -- "$@")
+PARSED_ARGUMENTS=$(getopt -n $(basename $0) --alternative -o '' --longoptions hi:,hc:,vi:,vc:,h::,p:,g:,o:,v:,n:,w:,ws:,e:,t:,c:,x:,s:,a: -- "$@")
 if [[ $? -ne 0 ]]; then
     exit 1;
 fi
@@ -189,6 +190,7 @@ do
 	--c)	c="$2"		; shift	2	;;
 	--x)	x="$2"		; shift	2	;;
 	--s)	s="$2"		; shift	2	;;
+	--a)	a="$2"		; shift	2	;;
     --)		shift; break ;;
    (*) usage
        exit 1
@@ -291,6 +293,13 @@ else
 	## replace all the spaces with _
 	s=$(echo $s | sed 's/ /_/g')
 	s="_${s}"
+fi
+
+if [ -z "$a" ]
+then
+	a=""
+else
+	a=$(to_absolute_path "$a")
 fi
 
 #######################
@@ -869,10 +878,18 @@ then
 fi
 
 while (( $i < $negatives_regions )); do
-	bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file_neg.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
+
+	if [ -n "$e" ]
+	then
+		bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file_neg.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
+		cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file_neg.bed
+	else
+		bedtools shuffle -maxTries 1000 -chrom -noOverlapping -excl ${out_genome}/exclusion_file.bed -i ${outdir}/top_positives_peaks.bed -g ${out_genome}/${g}.chrom.sizes > ${outdir}/negatives_peaks_tmp.bed
+		cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file.bed
+	fi
 
 	cat ${outdir}/negatives_peaks_tmp.bed >> ${outdir}/negatives_peaks.bed
-	cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file_neg.bed
+	# cat ${outdir}/negatives_peaks_tmp.bed >> ${out_genome}/exclusion_file_neg.bed
 
 	awk 'OFS="\t" {print $1"."$2"."$3, $1, $2, $3, "."}' ${outdir}/negatives_peaks_tmp.bed > ${outdir}/negatives_peaks.saf
 
@@ -953,7 +970,8 @@ else
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
-	## 3) filtered_${genome_name}_win_count.tsv --> for now it is unfiltered on FPK value input
+	## 3) filtered_${genome_name}_win_count.tsv --> for
+	## now it is unfiltered on FPK value input
 
 	${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
 	"${outdir}/top_positives_peaks${s}.tsv" \
@@ -966,6 +984,30 @@ else
 	"${s}"
 
 fi
+
+######################
+##	Plot coverage	##
+######################
+
+## basename
+basevi=$(basename "${vi}" .bam)
+basevc=$(basename "${vc}" .bam)
+## total read mapped human inout bam
+reads=$(samtools view -c -F 4 "${hi}")
+## bamcoverage
+bamCoverage -b ${vi} -of bigwig -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevi}.bw"
+bamCoverage -b ${vi} -of bedgraph -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevi}.bedgraph"
+bamCoverage -b ${vc} -of bigwig -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevc}.bw"
+bamCoverage -b ${vc} -of bedgraph -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevc}.bedgraph"
+
+if [ -n "$a" ]
+then
+	${RSCRIPT} ${BASEDIR}/tracks_vipeaq.R "${outdir}/${basevi}.bedgraph" ${a} ${s} "${outdir}"
+fi
+
+# --scaleFactor ${estimated_target_genome_copy_number}
+
+
 
 ##################
 ##	Cleaning	##
