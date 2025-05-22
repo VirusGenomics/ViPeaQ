@@ -22,14 +22,10 @@ suffix <- args[3]
 
 outdir <- args[4]
 
-# gff_file <- "/home/robitaillea/test_VipeaQ/sequence.gff3"
-
 # ---- Read BED file as GRanges ----
 bed_df <- read.table(bed_file, header = FALSE, sep = "\t",
                      col.names = c("seqid", "start", "end", "coverage"))
 
-# bed_df <- read.table(bed_file, header = FALSE, sep = "\t",
-#                      col.names = c("id", "seqid", "start", "end", "dot", "score", "coverage"))
 bed_df$midpoint <- (bed_df$start + bed_df$end) / 2
 
 # Filter a single sequence if needed
