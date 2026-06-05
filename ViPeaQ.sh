@@ -6,7 +6,7 @@
 
 # exit when any command fails
 set -e
-set +o pipefail  # Ensure pipeline failures are caught
+set -o pipefail
 
 ##################
 ##	Functions	##
@@ -67,8 +67,8 @@ download_genome_files() {
 			;;
 		mm9)
 			download_file "https://hgdownload.cse.ucsc.edu/goldenpath/mm9/bigZips/mm9.chrom.sizes" "$out_genome/mm9.chrom.sizes"
-			download_file "https://www.repeatmasker.org/genomes/mm9/RepeatMasker-rm328-db20090604/mm9.fa.out.gz" "$out_genome/mm9_repeatmasker.bed.gz"
-			gunzip -c mm9.fa.out.gz | sed 's/ \+/\t/g' | sed 's/^\t//g' | tail -n +4 | cut -f 5,6,7 > mm9_repeatmasker
+			# download_file "https://www.repeatmasker.org/genomes/mm9/RepeatMasker-rm328-db20090604/mm9.fa.out.gz" "$out_genome/mm9_repeatmasker.bed.gz"
+			# gunzip -c "$out_genome/mm9_repeatmasker.bed.gz" | sed 's/ \+/\t/g' | sed 's/^\t//g' | tail -n +4 | cut -f 5,6,7 > "$out_genome/mm9_repeatmasker.bed"
 			;;
 		hg38)
 			download_file "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.chrom.sizes" "$out_genome/hg38.chrom.sizes"
@@ -132,7 +132,7 @@ Optional:
 	-c	Expected FPK thershold to apply local lambda correction - default: 10
 	-x	Percentile threshold for filtering the host input FPK distribution, setting two cutoff limits: the lower limit at x and the upper limit at 100 - x percentiles. Default value: 10.
 	-s	Suffix for output files
-	-a	gff annotation file of target genome (NCBI)
+	-a	gff annotation file of target genome (NCBI) (not implemented yet)
 
 	-h  show this help text"
 		
@@ -215,6 +215,7 @@ else
 	o=$(to_absolute_path "$o")
 fi
 
+
 if [ -z "$v" ]
 then
 	v="score"
@@ -224,7 +225,7 @@ if [ -z "$n" ]
 then
 	n=200
 else
-	if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+	if ! [[ "$n" =~ ^[1-9][0-9]*$ ]]; then
 		echo "\"$n\" is not a positive integer: n parameter must be a positive integer"
 		echo "Try '$(cmd) -h' for more information.";
 		exit 1
@@ -242,21 +243,31 @@ else
 	fi
 fi
 
+if [ "$w" -le 0 ]; then
+    echo "\"$w\" is not a positive integer: w parameter must be a positive integer"
+	echo "Try '$(cmd) -h' for more information.";
+	exit 1
+fi
 
 if [ -z "$ws" ]
 then
 	ws=0.5
 else
-	if ! [[ $ws =~ ^0(\.[0-9]+)?$ || $ws == "1" ]]; then
-		echo "$ws is not a valid floating-point number between 0 and 1";
+	if ! awk -v ws="$ws" 'BEGIN { exit !(ws > 0 && ws <= 1) }'; then
+   		echo "$ws is not a valid floating-point number greater than 0 and up to 1"
 		echo "Try '$(cmd) -h' for more information.";
 		exit 1
 	fi
 fi
 
-## Calculate the number of consecutive region to consider around a target region to not have any bases overlap to the target region (non-overlapped)
+if [ "$w" -lt 1000 ]; then
+    factor=$(( (1000 + w - 1) / w ))   # ceil(1000 / w)
+else
+    factor=1
+fi
+
 nonoverlap_step=$(echo "((($w / $ws) / $w) + 0.9999)" | bc -l)
-nonoverlap_step_int=$(echo "$nonoverlap_step / 1" | bc)  # Truncate to an integer
+nonoverlap_step_int=$(( $(echo "$nonoverlap_step / 1" | bc) * factor ))
 
 if [ -z "$e" ]
 then
@@ -286,13 +297,11 @@ then
 	x=10
 fi
 
-if [ -z "$s" ]
-then
-	s=""
+if [ -z "$s" ]; then
+    s=""
 else
-	## replace all the spaces with _
-	s=$(echo $s | sed 's/ /_/g')
-	s="_${s}"
+    s=$(echo "$s" | sed 's/ /_/g')
+    [ "${s#_}" = "$s" ] && s="_${s}"
 fi
 
 if [ -z "$a" ]
@@ -308,6 +317,8 @@ fi
 echo "~~~~~~~~~~~~~~~~~~~~";
 echo "Log";
 echo "~~~~~~~~~~~~~~~~~~~~";
+
+o=$(realpath "$o");
 
 outdir=${o};
 
@@ -338,13 +349,35 @@ echo "Command:"
 echo "$FULL_COMMAND"
 echo "Parameters:"
 
-# Process the string using regex matching
-while [[ $PARSED_ARGUMENTS =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
-    key="${BASH_REMATCH[1]}"       # Capture the key (e.g., --hi)
-    value="${BASH_REMATCH[2]}"     # Capture the value (e.g., path inside quotes)
-    echo "$key = $value"       # Format the output as required
-    # Trim the processed part from the string
-    PARSED_ARGUMENTS="${PARSED_ARGUMENTS#*"${BASH_REMATCH[0]}"}"
+parsed_copy="$PARSED_ARGUMENTS"
+
+while [[ $parsed_copy =~ (--[a-zA-Z]+)[[:space:]]+\'([^\']*)\' ]]; do
+    key="${BASH_REMATCH[1]}"
+
+    case "$key" in
+        --hi) value="$hi" ;;
+        --hc) value="$hc" ;;
+        --vi) value="$vi" ;;
+        --vc) value="$vc" ;;
+        --p)  value="$p"  ;;
+        --g)  value="$g"  ;;
+        --o)  value="$o"  ;;
+        --v)  value="$v"  ;;
+        --n)  value="$n"  ;;
+        --w)  value="$w"  ;;
+        --ws) value="$ws" ;;
+        --e)  value="$e"  ;;
+        --t)  value="$t"  ;;
+        --c)  value="$c"  ;;
+        --x)  value="$x"  ;;
+        --s)  value="$s"  ;;
+        --a)  value="$a"  ;;
+        *)    value="${BASH_REMATCH[2]}" ;;
+    esac
+
+    echo "$key = $value"
+
+    parsed_copy="${parsed_copy#*"${BASH_REMATCH[0]}"}"
 done
 
 RSCRIPT=$(which Rscript 2>/dev/null)
@@ -385,13 +418,14 @@ echo "QC";
 echo "~~~~~~~~~~~~~~~~~~~~";
 
 name=$(basename "${p%.*}");
-ext="${p#*.}"
+ext="${p##*.}"
 if [ "$ext" == "txt" ]	## epic2
 then
-	${RSCRIPT} ${BASEDIR}/plot_epic2_qc.r -i ${p} -s ${name} -o ${outdir}
+	"${RSCRIPT}" "${BASEDIR}/plot_epic2_qc.r" -i "${p}" -s "${name}" -o "${outdir}"
 elif [ "$ext" == "narrowPeak" ]	## macs2
 then
-	${RSCRIPT} ${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}
+	"${RSCRIPT}" "${BASEDIR}/plot_macs2_qc.r" -i "${p}" -s "${name}" -o "${outdir}"
+	# echo -e "${RSCRIPT} ${BASEDIR}/plot_macs2_qc.r -i ${p} -s ${name} -o ${outdir}"
 	sed $'1i #chr\tstart\tend\tname\tscore\tstrand\tsignal\tpvalue\tqvalue\tpeak' ${p} > ${outdir}/macs2_peaks.bed
 	p="${outdir}/macs2_peaks.bed"
 else
@@ -405,7 +439,13 @@ fi
 
 #	Blacklisted
 cd ${out_genome};
-cat $(ls *.bed) | bedtools sort | bedtools merge > blacklisted.bed
+# cat $(ls *.bed) | bedtools sort | bedtools merge > blacklisted.bed
+
+find "$out_genome" -maxdepth 1 -type f -name "*.bed" ! -name "blacklisted.bed" -print0 \
+  | xargs -0 cat \
+  | bedtools sort \
+  | bedtools merge \
+  > "${out_genome}/blacklisted.bed"
 
 cd ${dir}
 
@@ -422,14 +462,15 @@ fi
 ##	Check if paired or single end
 ##
 paired=0
-paired=$(sambamba view -h ${hi} | head -n 10000 | samtools view -c -f 1)
-if [[ "$paired" < 1 ]]
+paired=$(samtools view -c -f 1 "$hi")
+
+if (( paired < 1 ))
 then
-	echo "Single end reads detected";
-	mode="";
+	echo "Single end reads detected"
+	mode=""
 else
-	echo "Paired end reads detected";
-	mode="-p"
+	echo "Paired end reads detected"
+	mode="-p --countReadPairs"
 fi
 
 
@@ -482,8 +523,18 @@ median_fpk_host_chip=$(cut -f 10 ${outdir}/genome_win_count.tsv | sort -n | awk 
 ##	Split viral genome in same size windows (no blacklist) and count cov input and chipsig
 
 ## Add control if empty --> BAM file header is not correctly formatted, refers to help, exit 1
-genome_name=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 2 | cut -f 1);
-genome_size=$(sambamba -q view -H ${vi} | grep "SQ" | cut -d ":" -f 3)
+read -r genome_name genome_size < <(
+  sambamba -q view -H "$vi" \
+    | awk '$1=="@SQ" {
+        sn=""; ln="";
+        for (i=1; i<=NF; i++) {
+          if ($i ~ /^SN:/) { sn=substr($i,4) }
+          if ($i ~ /^LN:/) { ln=substr($i,4) }
+        }
+        if (sn != "" && ln != "") print sn, ln
+      }' \
+    | head -n 1
+)
 
 # echo -e "${genome_name}\t${genome_size}"
 
@@ -928,7 +979,6 @@ else
 fi
 
 
-
 ## Positives
 # Chromosome	Start	End	Strand	Length	CovInput	CovChiP	FPKInput	FPKChiP	Score
 # ${outdir}/top_positives_peaks.tsv
@@ -948,66 +998,169 @@ if (( $(echo "$lambda_input > 0" |bc -l) )); then
 	## 3) ${genome_name}_win_count_lambda_corrected.tsv
 
 	input_fpk_col=11
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv"
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv"
+	# awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count_lambda_corrected.tsv > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv.tmp"
+	# awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count_lambda_corrected.tsv > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}_full.tsv"
 
-	${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
-	"${outdir}/top_positives_peaks${s}.tsv" \
-	"${outdir}/top_negatives_peaks${s}.tsv" \
-	"${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
-	"${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
-	"${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
-	"${outdir}" \
-	"${lambda_input}" \
-	"${s}"
+	# bedtools intersect -a ${outdir}/top_positives_peaks${s}.tsv -b ${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv.tmp -wb | cut -f11- > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv"
+	# bedtools intersect -a ${outdir}/top_negatives_peaks${s}.tsv -b ${outdir}/negatives_win_count_lambda_corrected_filtered${s}_full.tsv -wb | cut -f10- > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv"
+	
+	bedtools intersect -a ${outdir}/top_positives_peaks${s}.tsv -b ${outdir}/positives_win_count_lambda_corrected.tsv -wb | cut -f11- > "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv"
+	bedtools intersect -a ${outdir}/top_negatives_peaks${s}.tsv -b ${outdir}/negatives_win_count_lambda_corrected.tsv -wb | cut -f10- > "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv"
+
+	# ${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
+	# "${outdir}/top_positives_peaks${s}.tsv" \
+	# "${outdir}/top_negatives_peaks${s}.tsv" \
+	# "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
+	# "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
+	# "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
+	# "${outdir}" \
+	# "${lambda_input}" \
+	# "${s}"
+
+	r_err_file=$(mktemp)
+
+	set +e
+	
+	echo -e ${RSCRIPT} ${BASEDIR}/Plots_ViPeaQ.R \
+	-P "${outdir}/top_positives_peaks${s}.tsv" \
+	-N "${outdir}/top_negatives_peaks${s}.tsv" \
+	-T "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
+	-A "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
+	-B "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
+	-o "${outdir}" \
+	-l "${lambda_input}" \
+	-s "${s}" \
+	2> "${r_err_file}"
+
+	${RSCRIPT} ${BASEDIR}/Plots_ViPeaQ.R \
+	-P "${outdir}/top_positives_peaks${s}.tsv" \
+	-N "${outdir}/top_negatives_peaks${s}.tsv" \
+	-T "${outdir}/${genome_name}_win_count_lambda_corrected${s}.tsv" \
+	-A "${outdir}/positives_win_count_lambda_corrected_filtered${s}.tsv" \
+	-B "${outdir}/negatives_win_count_lambda_corrected_filtered${s}.tsv" \
+	-o "${outdir}" \
+	-l "${lambda_input}" \
+	-s "${s}" \
+	2> "${r_err_file}"
+	
+	r_status=$?
+	set -e
+
+	if [ "${r_status}" -ne 0 ]; then
+		if [ -s "${r_err_file}" ]; then
+			cat "${r_err_file}"
+			echo "Only the plot creation failed. Run the following script to generate the plot and normalized tracks:"
+			echo "	${BASEDIR}/Plots_ViPeaQ.R"
+			echo "	${BASEDIR}/normalized_tracks.sh"
+		else
+			echo "ERROR: Plots_ViPeaQ.R failed, but did not return any stderr message."
+		fi
+		rm -f "${r_err_file}"
+		exit 1
+	fi
+
+	rm -f "${r_err_file}"
+
 
 else
 
 	input_fpk_col=9
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > "${outdir}/positives_win_count_filtered${s}.tsv"
-	awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count.tsv > "${outdir}/negatives_win_count_filtered${s}.tsv"
+	# awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/positives_win_count.tsv > "${outdir}/positives_win_count_filtered${s}.tsv.tmp"
+	# awk -F $'\t' -v col="$input_fpk_col" -v low="$low_percentile" -v high="$high_percentile" '$col > low && $col < high' ${outdir}/negatives_win_count.tsv > "${outdir}/negatives_win_count_filtered${s}_full.tsv"
 
+	# bedtools intersect -a ${outdir}/top_positives_peaks${s}.tsv -b ${outdir}/positives_win_count_filtered${s}.tsv.tmp -wb | cut -f11- > "${outdir}/positives_win_count_filtered${s}.tsv"
+	# bedtools intersect -a ${outdir}/top_negatives_peaks${s}.tsv -b ${outdir}/negatives_win_count_filtered${s}.tsv -wb | cut -f10- > "${outdir}/negatives_win_count_filtered${s}.tsv"
+	
+	bedtools intersect -a ${outdir}/top_positives_peaks${s}.tsv -b ${outdir}/positives_win_count.tsv -wb | cut -f11- > "${outdir}/positives_win_count_filtered${s}.tsv"
+	bedtools intersect -a ${outdir}/top_negatives_peaks${s}.tsv -b ${outdir}/negatives_win_count.tsv -wb | cut -f10- > "${outdir}/negatives_win_count_filtered${s}.tsv"
 	## Here the 3 distribution to give to R are:
 	## 1) positives_win_count.tsv
 	## 2) negatives_win_count.tsv
 	## 3) filtered_${genome_name}_win_count.tsv --> for
 	## now it is unfiltered on FPK value input
 
-	${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
-	"${outdir}/top_positives_peaks${s}.tsv" \
-	"${outdir}/top_negatives_peaks${s}.tsv" \
-	"${outdir}/filtered_${genome_name}_win_count${s}.tsv" \
-	"${outdir}/positives_win_count_filtered${s}.tsv" \
-	"${outdir}/negatives_win_count_filtered${s}.tsv" \
-	"${outdir}" \
-	"${lambda_input}" \
-	"${s}"
+	# ${RSCRIPT} ${BASEDIR}/ChiP_statistics_all.R \
+	# "${outdir}/top_positives_peaks${s}.tsv" \
+	# "${outdir}/top_negatives_peaks${s}.tsv" \
+	# "${outdir}/filtered_${genome_name}_win_count${s}.tsv" \
+	# "${outdir}/positives_win_count_filtered${s}.tsv" \
+	# "${outdir}/negatives_win_count_filtered${s}.tsv" \
+	# "${outdir}" \
+	# "${lambda_input}" \
+	# "${s}"
 
+	r_err_file=$(mktemp)
+
+	set +e
+	
+	echo -e ${RSCRIPT} ${BASEDIR}/Plots_ViPeaQ.R \
+	-P "${outdir}/top_positives_peaks${s}.tsv" \
+	-N "${outdir}/top_negatives_peaks${s}.tsv" \
+	-T "${outdir}/filtered_${genome_name}_win_count${s}.tsv" \
+	-A "${outdir}/positives_win_count_filtered${s}.tsv" \
+	-B "${outdir}/negatives_win_count_filtered${s}.tsv" \
+	-o "${outdir}" \
+	-l "${lambda_input}" \
+	-s "${s}" \
+	2> "${r_err_file}"
+
+	${RSCRIPT} ${BASEDIR}/Plots_ViPeaQ.R \
+	-P "${outdir}/top_positives_peaks${s}.tsv" \
+	-N "${outdir}/top_negatives_peaks${s}.tsv" \
+	-T "${outdir}/filtered_${genome_name}_win_count${s}.tsv" \
+	-A "${outdir}/positives_win_count_filtered${s}.tsv" \
+	-B "${outdir}/negatives_win_count_filtered${s}.tsv" \
+	-o "${outdir}" \
+	-l "${lambda_input}" \
+	-s "${s}" \
+	2> "${r_err_file}"
+	
+	r_status=$?
+	set -e
+
+	if [ "${r_status}" -ne 0 ]; then
+		if [ -s "${r_err_file}" ]; then
+			cat "${r_err_file}"
+			echo "Only the plot creation failed. Run the following script to generate the plot and normalized tracks:"
+			echo "	${BASEDIR}/Plots_ViPeaQ.R"
+			echo "	${BASEDIR}/normalized_tracks.sh"
+		else
+			echo "ERROR: Plots_ViPeaQ.R failed, but did not return any stderr message."
+		fi
+		rm -f "${r_err_file}"
+		exit 1
+	fi
+
+	rm -f "${r_err_file}"
 fi
 
 ######################
 ##	Plot coverage	##
 ######################
 
-## basename
-basevi=$(basename "${vi}" .bam)
-basevc=$(basename "${vc}" .bam)
-## total read mapped human inout bam
-reads=$(samtools view -c -F 4 "${hi}")
-## bamcoverage
-bamCoverage -b ${vi} -of bigwig -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevi}.bw"
-bamCoverage -b ${vi} -of bedgraph -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevi}.bedgraph"
-bamCoverage -b ${vc} -of bigwig -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevc}.bw"
-bamCoverage -b ${vc} -of bedgraph -bs 50 -p ${t} --normalizeUsing None -e 50 -o "${outdir}/${basevc}.bedgraph"
+echo "~~~~~~~~~~~~~~~~~~~~";
+echo "Plot coverage";
+echo "~~~~~~~~~~~~~~~~~~~~";
 
-if [ -n "$a" ]
-then
-	${RSCRIPT} ${BASEDIR}/tracks_vipeaq.R "${outdir}/${basevi}.bedgraph" ${a} ${s} "${outdir}"
-fi
+## basename
+# basevi=$(basename "${vi}" .bam)
+# basevc=$(basename "${vc}" .bam)
+
+# medcov=$(samtools depth ${vc} | cut -f3 | sort -n | awk '{a[i++]=$1} END {print a[int(i/2)]}')
+# echo "${medcov}";
+
+# medtar=$(tail -n +2 ${outdir}/outfile_peaks_peaks${s}.tsv | cut -f 3 | sort -n | awk '{a[i++]=$1} END {print a[int(i/2)]}')
+# echo "${medtar}";
+
+# factor=$(echo "$medtar / $medcov" | bc -l)
+# echo "${factor}";
+
+# bamCoverage -b ${vc} -of bedgraph -bs 1 -p ${t} --normalizeUsing None --scaleFactor ${factor} -o "${outdir}/${basevc}.bedgraph"
+# bamCoverage -b ${vc} -of bigwig -bs 1 -p ${t} --normalizeUsing None --scaleFactor ${factor} -o "${outdir}/${basevc}.bw"
 
 # --scaleFactor ${estimated_target_genome_copy_number}
 
-
+"${BASEDIR}/normalized_tracks.sh" -i "${outdir}" -o "${outdir}"
 
 ##################
 ##	Cleaning	##
@@ -1017,7 +1170,7 @@ echo "~~~~~~~~~~~~~~~~~~~~";
 echo "Cleaning";
 echo "~~~~~~~~~~~~~~~~~~~~";
 
-rm -f ${outdir}/macs2_peaks.bed
+# rm -f ${outdir}/macs2_peaks.bed
 rm -f ${out_genome}/blacklisted.bed
 rm -f ${out_genome}/genome_win.saf
 rm -f ${out_genome}/genome_win_count.tsv
@@ -1052,8 +1205,8 @@ rm -f ${outdir}/negatives_win_count_lambda_corrected.tsv
 rm -f ${outdir}/positives_win_count.tsv
 rm -f ${outdir}/negatives_win_count.tsv
 rm -f ${outdir}/top_positives_peaks.bed
-rm -f ${outdir}/macs2_peakqc.summary.txt
-rm -f ${outdir}/macs2_peakqc.plots.pdf
+# rm -f ${outdir}/macs2_peakqc.summary.txt
+# rm -f ${outdir}/macs2_peakqc.plots.pdf
 
 
 exit 0

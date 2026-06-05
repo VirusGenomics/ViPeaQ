@@ -25,7 +25,7 @@ if (lambda>0){
   fpk <- data$FPKInput
 }
 
-fpk_min10 <- fpk[fpk >= 10]
+fpk_min10 <- fpk[fpk >= 5]
 q <- quantile(fpk_min10, prob=c(.1,.5,.9), type=1)
 
 fpk_min10_q <- fpk_min10[fpk_min10 > q[[1]] & fpk_min10 < q[[3]]]

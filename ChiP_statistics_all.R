@@ -32,7 +32,7 @@ outdir <- args[6]
 lambda <- args[7]
 
 suffix <- args[8]
-suffix <- substring(suffix, 2)
+# suffix <- substring(suffix, 2)
 
 #######################
 ##  CALCULATE RATIO  ##
@@ -68,20 +68,24 @@ median_neg_peaks <- median(ratio_neg_peaks)
 
 median_neg_win <- median(ratio_neg_win)
 
+median_pos_peaks <- median(ratio_pos_peaks)
+
+median_pos_win <- median(ratio_pos_win)
+
 ##############################
 ##  CALCULATE HOST POS&NEG  ##
 ##############################
-pos_distribution <- ratio_pos_peaks / median_neg_peaks
-neg_distribution <- ratio_neg_peaks / median_neg_peaks
+pos_distribution <- ratio_pos_peaks / median_pos_peaks
+neg_distribution <- ratio_neg_peaks / median_pos_peaks
 
-pos_distribution_win <- ratio_pos_win / median_neg_win
-neg_distribution_win <- ratio_neg_win / median_neg_win
+pos_distribution_win <- ratio_pos_win / median_pos_win
+neg_distribution_win <- ratio_neg_win / median_pos_win
 
 ########################
 ##  CALCULATE TARGET  ##
 ########################
-target_distribution <- ratio_target / median_neg_peaks
-target_distribution_win <- ratio_target / median_neg_win
+target_distribution <- ratio_target / median_pos_peaks
+target_distribution_win <- ratio_target / median_pos_win
 
 ######################
 ##  BUILD DATA PLOT ##
@@ -104,9 +108,9 @@ stat_box_data_peaks <- function(y, upper_limit = max(plot.data_peaks$value) * 1.
 
 pos_win_data <- data.frame(group = "Positives", value = pos_distribution_win)
 neg_win_data <- data.frame(group = "Negatives", value = neg_distribution_win)
-target_data <- data.frame(group = "Targets", value = target_distribution_win)
+target_win_data <- data.frame(group = "Targets", value = target_distribution_win)
 
-plot.data_win <- rbind(pos_win_data, neg_win_data, target_data)
+plot.data_win <- rbind(pos_win_data, neg_win_data, target_win_data)
 stat_box_data_win <- function(y, upper_limit = max(plot.data_win$value) * 1.3) {
   return( 
     data.frame(
@@ -123,6 +127,9 @@ stat_box_data_win <- function(y, upper_limit = max(plot.data_win$value) * 1.3) {
 ##  PLOT  ##
 ############
 create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
+  
+  # Define group colors
+  group_colors <- c("Positives" = "orange", "Negatives" = "grey", "Targets" = "red")
   
   plot.data <- plot.data %>%
     mutate(value = sign(value) * sqrt(abs(value)))
@@ -142,6 +149,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     crossing(group_plot = c("Positives", "Negatives", "Targets"))  # Ensure all medians appear on all violins
   
   # Calculate the 99.9th percentile threshold for each group and select the maximum
+  
   cap_threshold <- plot.data %>%
     group_by(group) %>%
     summarise(threshold = quantile(value, 0.999)) %>%
@@ -177,20 +185,24 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
     })
   }
   
+  n_pos <- stats$count[stats$group == "Positives"]
+  n_neg <- stats$count[stats$group == "Negatives"]
+  n_tar <- stats$count[stats$group == "Targets"]
   
-  # Define group colors
-  group_colors <- c("Positives" = "orange", "Negatives" = "grey", "Targets" = "red")
+  xlabels_expr <- c(
+    "Positives" = bquote(atop("Positives", bold(n == .(scales::comma(n_pos))))),
+    "Negatives" = bquote(atop("Background", bold(n == .(scales::comma(n_neg))))),
+    "Targets"   = bquote(atop("Targets",   bold(n == .(scales::comma(n_tar)))))
+  )
   
   # Generate the plot
   plot_peaks <- ggplot(plot.data, aes(x = factor(group, levels = c("Positives", "Negatives", "Targets")), y = value, fill = group)) + 
     geom_violin(trim = TRUE, alpha = 0.6) + 
     scale_fill_manual(values = group_colors) +
-    scale_x_discrete(limits = c("Positives", "Negatives", "Targets"),
-                     labels = c(
-                       "Positives" = paste0("Positives<br><b>n=", scales::comma(stats$count[stats$group == "Positives"]), "</b>"),
-                       "Negatives" = paste0("Background<br><b>n=", scales::comma(stats$count[stats$group == "Negatives"]), "</b>"),
-                       "Targets" = paste0("Targets<br><b>n=", scales::comma(stats$count[stats$group == "Targets"]), "</b>")
-                     )) +
+    scale_x_discrete(
+      limits = c("Positives", "Negatives", "Targets"),
+      labels = xlabels_expr
+    ) +
     scale_y_continuous(
       name = "Signed Sqrt Transformed Relative Enrichment",
       breaks = sort(unique(c(0, pretty(range(plot.data$value)), stats$median))),
@@ -204,7 +216,7 @@ create_chip_signal_plot <- function(plot.data, plot_title, x_label) {
       axis.title.y.right = element_text(size = 16, face = "bold"),
       axis.text.y.left = element_markdown(size = 12),
       axis.text.y.right = element_markdown(size = 12),
-      axis.text.x = element_markdown(size = 12),
+      axis.text.x = element_text(size = 12),
       legend.position = "none",
       plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
       plot.caption = element_text(size = 10, hjust = 0),
@@ -262,14 +274,13 @@ out_peaks_name <- paste("outfile_peaks",suffix,".pdf",sep="")
 out_peaks <- paste(outdir,out_peaks_name,sep="/")
 out_title_peaks <- paste("ChIP Signal Distribution Across Genome Peaks",suffix,sep=" ")
 g_peaks <- create_chip_signal_plot(plot.data_peaks, out_title_peaks, "Genome Regions")
-ggsave(filename = out_peaks, plot = g_peaks, width = 35, height = 20, units = "cm")
+ggsave(filename = out_peaks, plot = g_peaks, width = 35, height = 20, units = "cm", device = grDevices::cairo_pdf)
 
 out_win_name <- paste("outfile_win",suffix,".pdf",sep="")
 out_win <- paste(outdir,out_win_name,sep="/")
 out_title_win <- paste("ChIP Signal Distribution Across Genome Bins",suffix,sep=" ")
 g_win <- create_chip_signal_plot(plot.data_win, out_title_win, "Genome Bins")
-ggsave(filename = out_win, plot = g_win, width = 35, height = 20, units = "cm")
-
+ggsave(filename = out_win, plot = g_win, width = 35, height = 20, units = "cm", device = grDevices::cairo_pdf)
 
 out_data_peaks_name <- paste("outfile_peaks",suffix,".tsv",sep="")
 out_data_peaks <- paste(outdir,out_data_peaks_name,sep="/")
@@ -283,8 +294,8 @@ write.table(new_myls, file = out_data_peaks, sep = "\t", row.names = FALSE)
 
 out_data_win_name <- paste("outfile_win",suffix,".tsv",sep="")
 out_data_win <- paste(outdir,out_data_win_name,sep="/")
-myls <- list(as.data.frame(pos_win_data), as.data.frame(neg_win_data), as.data.frame(target_data))
-max.rows <- max(length(pos_win_data$value), length(neg_win_data$value), length(target_data$value))
+myls <- list(as.data.frame(pos_win_data), as.data.frame(neg_win_data), as.data.frame(target_win_data))
+max.rows <- max(length(pos_win_data$value), length(neg_win_data$value), length(target_win_data$value))
 new_myls <- lapply(myls, function(x) { x[1:max.rows,] })
 value_columns <- lapply(new_myls, function(x) x$value)
 new_myls <- as.data.frame(do.call(cbind, value_columns))
